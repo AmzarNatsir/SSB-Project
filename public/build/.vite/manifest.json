@@ -1,0 +1,49 @@
+{
+  "resources/css/style.css": {
+    "file": "css/style.min.css",
+    "src": "resources/css/style.css",
+    "isEntry": true,
+    "name": "style",
+    "names": [
+      "style.css"
+    ]
+  },
+  "resources/img/authentication/email-bg.jpg": {
+    "file": "icons/email-bg.jpg",
+    "src": "resources/img/authentication/email-bg.jpg"
+  },
+  "resources/img/authentication/forgot-bg.jpg": {
+    "file": "icons/forgot-bg.jpg",
+    "src": "resources/img/authentication/forgot-bg.jpg"
+  },
+  "resources/img/authentication/login-bg.jpg": {
+    "file": "icons/login-bg.jpg",
+    "src": "resources/img/authentication/login-bg.jpg"
+  },
+  "resources/img/authentication/register-bg.jpg": {
+    "file": "icons/register-bg.jpg",
+    "src": "resources/img/authentication/register-bg.jpg"
+  },
+  "resources/img/authentication/reset-bg.jpg": {
+    "file": "icons/reset-bg.jpg",
+    "src": "resources/img/authentication/reset-bg.jpg"
+  },
+  "resources/img/authentication/success-bg.jpg": {
+    "file": "icons/success-bg.jpg",
+    "src": "resources/img/authentication/success-bg.jpg"
+  },
+  "resources/img/authentication/verification-bg.jpg": {
+    "file": "icons/verification-bg.jpg",
+    "src": "resources/img/authentication/verification-bg.jpg"
+  },
+  "resources/img/bg/chat-bg.png": {
+    "file": "icons/chat-bg.png",
+    "src": "resources/img/bg/chat-bg.png"
+  },
+  "resources/js/script.js": {
+    "file": "js/script.js",
+    "name": "script",
+    "src": "resources/js/script.js",
+    "isEntry": true
+  }
+}

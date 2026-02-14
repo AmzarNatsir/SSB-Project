@@ -1,0 +1,46 @@
+<?php $page = 'success'; ?>
+@extends('layout.mainlayout')
+@section('content')
+
+    <!-- ========================
+        Start Page Content
+    ========================= -->
+
+    <div class="overflow-hidden p-3 acc-vh">               
+
+        <!-- start row -->
+        <div class="row vh-100 w-100 g-0"> 
+
+            <div class="col-lg-6 vh-100  overflow-y-auto overflow-x-hidden">
+                <form action="{{url('index')}}" class=" vh-100 d-flex justify-content-between flex-column p-4 pb-0">
+                    <div class="text-center mb-4 auth-logo">
+                        <img src="{{URL::asset('build/img/logo.svg')}}" class="img-fluid" alt="Logo">
+                    </div>
+                    <div>
+                        <div class="text-center mb-3">
+                            <span class="avatar avatar-xl rounded-circle bg-success mb-4"><i class="ti ti-check fs-26"></i></span>
+                            <h4 class="mb-1">Success</h4>
+                            <p class="mb-0">Your Passwrod Reset Successfully!</p>
+                        </div>
+                        <div class="mb-3">
+                            <a href="{{url('login')}}" class="btn btn-primary w-100">Back to Login</a>
+                        </div>
+                    </div>
+                    <div class="text-center pb-4">
+                        <p class="text-dark mb-0">Copyright &copy; <script>document.write(new Date().getFullYear())</script> - CRMS</p>
+                    </div>
+                </form>
+            </div> <!-- end col -->
+
+            <div class="col-lg-6 account-bg-07"></div> <!-- end col -->
+
+        </div>
+        <!-- end row -->
+            
+    </div>
+
+    <!-- ========================
+        End Page Content
+    ========================= -->
+
+@endsection       
