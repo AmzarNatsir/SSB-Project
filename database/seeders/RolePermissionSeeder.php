@@ -19,11 +19,11 @@ class RolePermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create Permissions (Example permissions)
+        // Create Permissions
         $permissions = [
-            'view dashboard',
-            'manage users',
-            'manage roles',
+            'view_projects', 'create_projects', 'edit_projects', 'delete_projects',
+            'view_budgets', 'create_budgets', 'edit_budgets', 'approve_budgets',
+            'manage_users', 'manage_roles', 'manage_settings'
         ];
 
         foreach ($permissions as $permission) {

@@ -23,7 +23,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/style.css', 'resources/js/script.js'],
+            input: ['resources/css/style.css', 'resources/js/script.js', 'resources/js/quotation.js'],
             refresh: true,
         }),
 
@@ -49,12 +49,12 @@ export default defineConfig({
                     src: 'resources/js',
                     dest: ''
                 },
-               
+
                 {
                     src: 'resources/plugins',
                     dest: ''
                 },
-               
+
             ]
         }),
     ],

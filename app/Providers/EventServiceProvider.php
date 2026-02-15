@@ -25,6 +25,12 @@ class EventServiceProvider extends ServiceProvider
         SurveyCompleted::class => [
             // Add completion listeners here
         ],
+        \App\Events\BudgetSubmitted::class => [
+            \App\Listeners\SendApprovalNotification::class,
+        ],
+        \App\Events\BudgetApproved::class => [
+            \App\Listeners\SendApprovalNotification::class,
+        ],
     ];
 
     /**

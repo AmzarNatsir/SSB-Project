@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'workshop' => [
+        'api_url' => env('API_WORKSHOP', 'http://localhost:8000/api/'),
+        'api_token' => env('WORKSHOP_API_TOKEN'),
+    ],
+
 ];

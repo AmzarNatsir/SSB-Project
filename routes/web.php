@@ -36,6 +36,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('project-survey/{uid}/document/{documentId}', [\App\Http\Controllers\ProjectSurveyController::class, 'deleteDocument'])->name('project-survey.document.delete');
     Route::get('project-survey/{uid}/document/{documentId}/download', [\App\Http\Controllers\ProjectSurveyController::class, 'downloadDocument'])->name('project-survey.document.download');
 
+    Route::get('projects/search', [\App\Http\Controllers\ProjectController::class, 'search'])->name('projects.search');
     Route::resource('projects', \App\Http\Controllers\ProjectController::class);
     Route::get('projects/{id}/data', [\App\Http\Controllers\ProjectController::class, 'getProject'])->name('projects.data');
     Route::post('projects/{id}/upload-image', [\App\Http\Controllers\ProjectController::class, 'uploadImage'])->name('projects.upload-image');
@@ -47,10 +48,34 @@ Route::middleware(['auth'])->group(function () {
         Route::get('surveys/stats/dashboard', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'dashboard']);
         Route::get('surveys/{uid}/status', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'status']);
         Route::get('surveys/scores/{id}', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'scoreDetails']);
+        
     });
+
+    // Project Budgets
+    Route::resource('budgets', \App\Http\Controllers\ProjectBudgetController::class)->parameters(['budgets' => 'uid']);
+    Route::post('budgets/{uid}/submit', [\App\Http\Controllers\ProjectBudgetController::class, 'submit'])->name('budgets.submit');
+    Route::post('budgets/{uid}/approve', [\App\Http\Controllers\ProjectBudgetController::class, 'approve'])->name('budgets.approve');
+    Route::post('budgets/{uid}/revise', [\App\Http\Controllers\ProjectBudgetController::class, 'revise'])->name('budgets.revise');
+    Route::delete('budgets/{uid}/items/{itemId}', [\App\Http\Controllers\ProjectBudgetController::class, 'deleteItem'])->name('budgets.items.destroy');
+    Route::get('projects/{projectId}/budget-history', [\App\Http\Controllers\ProjectBudgetController::class, 'history'])->name('projects.budget-history');
     
+    // Approval Flows
+    Route::resource('approval-flows', \App\Http\Controllers\ApprovalFlowController::class);
+    
+    // User Management
+    Route::resource('roles-permissions', \App\Http\Controllers\RoleController::class);
+    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
+    Route::resource('manage-users', \App\Http\Controllers\UserController::class);
+    
+    // Quotations
+    Route::resource('quotations', \App\Http\Controllers\QuotationController::class)->parameters(['quotations' => 'quotation']);
+    Route::post('quotations/{quotation}/submit', [\App\Http\Controllers\QuotationController::class, 'submit'])->name('quotations.submit');
+    Route::get('quotations/{quotation}/pdf', [\App\Http\Controllers\QuotationController::class, 'pdf'])->name('quotations.pdf');
+    // Helper for Units (if needed)
+    Route::get('api/proxy/units', [\App\Http\Controllers\QuotationController::class, 'getUnits'])->name('quotations.units');
+
     // ... other protected routes
 });
 
 // Temporary: explicit index route for redirection to work if named 'dashboard'
-// Route::get('/index', function () { return view('index'); })->name('index'); 
+// Route::get('/index', function () { return view('index'); })->name('index');

@@ -75,6 +75,7 @@
                                 <ul>    
                                     <li><a href="{{url('equipment-rental-rates-hm')}}" class="{{ Request::is('equipment-rental-rates-hm') ? 'active' : '' }}">Equipment Rental Rates HM</a></li>
                                     <li><a href="{{url('scoring')}}" class="{{ Request::is('scoring') ? 'active' : '' }}">Scoring</a></li>
+                                    <li><a href="{{ route('approval-flows.index') }}" class="{{ Request::is('approval-flows*') ? 'active' : '' }}">Approval Matrix</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -84,6 +85,8 @@
                         <ul>
                             <li class="{{ Request::is('projects') ? 'active' : '' }}"><a href="{{url('projects')}}"><i class="ti ti-atom-2"></i><span>Projects</span></a></li>
                             <li class="{{ Request::is('project-survey*') ? 'active' : '' }}"><a href="{{url('project-survey')}}"><i class="ti ti-clipboard-check"></i><span>Project Feasibility</span></a></li>
+                            <li class="{{ Request::is('budgets*') ? 'active' : '' }}"><a href="{{url('budgets')}}"><i class="ti ti-wallet"></i><span>Project Budgets</span></a></li>
+                            <li class="{{ Request::is('quotations*') ? 'active' : '' }}"><a href="{{url('quotations')}}"><i class="ti ti-file-dollar"></i><span>Project Quotations</span></a></li>
                         </ul>
                     </li>
                     
@@ -116,7 +119,7 @@
                         <ul>
                             <li class="{{ Request::is('manage-users') ? 'active' : '' }}"><a href="{{url('manage-users')}}"><i class="ti ti-users"></i><span>Manage Users</span></a></li>
                             <li class="{{ Request::is('roles-permissions','permission') ? 'active' : '' }}"><a href="{{url('roles-permissions')}}"><i class="ti ti-user-shield"></i><span>Roles & Permissions</span></a></li>
-                            <li class="{{ Request::is('delete-request') ? 'active' : '' }}"><a href="{{url('delete-request')}}"><i class="ti ti-flag-question"></i><span>Delete Request</span></a></li>
+                            <li class="{{ Request::is('permissions') ? 'active' : '' }}"><a href="{{url('permissions')}}"><i class="ti ti-flag-question"></i><span>Permissions</span></a></li>
                         </ul>
                     </li>
                     <li class="menu-title"><span>Help</span></li>

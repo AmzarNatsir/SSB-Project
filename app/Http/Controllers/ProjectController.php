@@ -257,4 +257,29 @@ class ProjectController extends Controller
 
         return response()->file($path);
     }
+    /**
+     * Search projects for Select2
+     */
+    public function search(Request $request)
+    {
+        $term = $request->term;
+        $query = Project::query()->where('project_status', 'COMPLETED');
+        
+        if ($term) {
+            $query->where('project_name', 'LIKE', '%' . $term . '%')
+                  ->orWhere('project_number', 'LIKE', '%' . $term . '%');
+        }
+        
+        $projects = $query->select('id', 'project_name', 'project_number')
+                        ->limit(20)
+                        ->get()
+                        ->map(function($project) {
+                            return [
+                                'id' => $project->id,
+                                'text' => $project->project_name . ' (' . $project->project_number . ')'
+                            ];
+                        });
+                        
+        return response()->json(['results' => $projects]);
+    }
 }

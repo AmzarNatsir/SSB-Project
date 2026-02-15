@@ -163,4 +163,12 @@ class Project extends Model
     {
         return $this->hasMany(\App\Models\ProjectSurvey::class, 'project_id');
     }
+
+    /**
+     * Get the latest budget for the project
+     */
+    public function latest_budget()
+    {
+        return $this->hasOne(ProjectBudget::class)->latestOfMany();
+    }
 }
