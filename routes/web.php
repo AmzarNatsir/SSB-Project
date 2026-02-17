@@ -70,9 +70,17 @@ Route::middleware(['auth'])->group(function () {
     // Quotations
     Route::resource('quotations', \App\Http\Controllers\QuotationController::class)->parameters(['quotations' => 'quotation']);
     Route::post('quotations/{quotation}/submit', [\App\Http\Controllers\QuotationController::class, 'submit'])->name('quotations.submit');
+    Route::post('quotations/{quotation}/approve', [\App\Http\Controllers\QuotationController::class, 'approve'])->name('quotations.approve');
     Route::get('quotations/{quotation}/pdf', [\App\Http\Controllers\QuotationController::class, 'pdf'])->name('quotations.pdf');
     // Helper for Units (if needed)
+    // Helper for Units (if needed)
     Route::get('api/proxy/units', [\App\Http\Controllers\QuotationController::class, 'getUnits'])->name('quotations.units');
+
+    // Negotiations
+    Route::resource('negotiations', \App\Http\Controllers\NegotiationController::class)->parameters(['negotiations' => 'negotiation']);
+    Route::post('negotiations/{negotiation}/submit', [\App\Http\Controllers\NegotiationController::class, 'submit'])->name('negotiations.submit');
+    Route::post('negotiations/{negotiation}/approve', [\App\Http\Controllers\NegotiationController::class, 'approve'])->name('negotiations.approve');
+    Route::get('negotiations/{negotiation}/letter', [\App\Http\Controllers\NegotiationController::class, 'downloadLetter'])->name('negotiations.letter');
 
     // ... other protected routes
 });

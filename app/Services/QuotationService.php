@@ -9,9 +9,22 @@ use App\Models\ApprovalFlow;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Enums\ApprovalDecision;
+use App\Models\QuotationApproval;
+use App\Services\AuditService;
+use App\Services\ApprovalFlowService;
 
 class QuotationService
 {
+    protected $auditService;
+    protected $flowService;
+
+    public function __construct(AuditService $auditService, ApprovalFlowService $flowService)
+    {
+        $this->auditService = $auditService;
+        $this->flowService = $flowService;
+    }
+
     public function create(array $data)
     {
         return DB::transaction(function () use ($data) {
@@ -103,16 +116,87 @@ class QuotationService
     public function submit(Quotation $quotation)
     {
         if ($quotation->status !== 'DRAFT' && $quotation->status !== 'REVISION_REQUIRED') {
-            throw new \Exception("Cannot submit quotation in {$quotation->status} status.");
+            throw new \Exception("Only DRAFT or REVISION_REQUIRED quotations can be submitted.");
         }
 
-        $quotation->status = 'SUBMITTED';
-        // Initialize approval flow here
-        $quotation->current_approval_level = 1; 
+        if ($quotation->items()->count() === 0) {
+            throw new \Exception("Cannot submit a quotation without items.");
+        }
+
+        // Resolve dynamic flow levels
+        $levels = $this->flowService->getLevels('QUOTATION');
+
+        if ($levels->isEmpty()) {
+            // No approval levels defined, immediately approve
+            $quotation->status = 'APPROVED';
+            $quotation->current_approval_level = 0;
+            $message = 'Quotation approved automatically (No approval levels defined).';
+        } else {
+            // Start approval flow
+            $quotation->status = 'SUBMITTED';
+            $quotation->current_approval_level = 1;
+            $message = 'Quotation submitted for approval.';
+        }
+
         $quotation->save();
         
-        // Trigger notification...
+        $this->auditService->log($quotation, 'SUBMIT', auth()->id(), [], ['message' => $message]);
+        
         return $quotation;
+    }
+
+    public function processApproval(Quotation $quotation, int $approverId, string $decision, ?string $notes)
+    {
+        return DB::transaction(function () use ($quotation, $approverId, $decision, $notes) {
+            $currentLevelNumber = $quotation->current_approval_level;
+            
+            if ($currentLevelNumber === 0) {
+                 throw new \Exception("Quotation is not in an approvable state.");
+            }
+            
+            // Resolve current level from dynamic flow
+            $levels = $this->flowService->getLevels('QUOTATION');
+            $currentLevel = $levels->where('level_number', $currentLevelNumber)->first();
+            
+            if (!$currentLevel) {
+                throw new \Exception("Approval level configuration missing for level $currentLevelNumber");
+            }
+
+            QuotationApproval::create([
+                'quotation_id' => $quotation->id,
+                'level' => $currentLevelNumber,
+                'approver_id' => $approverId,
+                'decision' => $decision,
+                'notes' => $notes,
+                'decided_at' => now()
+            ]);
+            
+            if ($decision === ApprovalDecision::APPROVED->value) {
+                // Check if there is next level
+                $nextLevel = $levels->where('level_number', $currentLevelNumber + 1)->first();
+                
+                if ($nextLevel) {
+                    $quotation->current_approval_level = $nextLevel->level_number;
+                    // Update status label for visibility if needed
+                    // For now keeping as SUBMITTED until final approval
+                } else {
+                    // Final approval
+                    $quotation->status = 'APPROVED';
+                    $quotation->current_approval_level = 0;
+                }
+            } elseif ($decision === ApprovalDecision::REJECTED->value) {
+                $quotation->status = 'REJECTED';
+                $quotation->current_approval_level = 0;
+            } elseif ($decision === ApprovalDecision::REVISION->value) {
+                $quotation->status = 'REVISION_REQUIRED';
+                $quotation->current_approval_level = 0;
+            }
+            
+            $quotation->save();
+            $this->auditService->log($quotation, 'APPROVE_DECISION_' . $decision, $approverId, ['level' => $currentLevelNumber]);
+            
+            return $quotation;
+        });
     }
     
     public function generatePdf(Quotation $quotation)
@@ -120,7 +204,7 @@ class QuotationService
         $data = [
             'quotation' => $quotation,
             'company' => [
-                'name' => 'PT. SATRIA BAHANA SARANA',
+                'name' => 'PT. SUMBER SETIA BUDI',
                 'address' => 'Head Office Address...',
                 'phone' => '+62...',
             ]

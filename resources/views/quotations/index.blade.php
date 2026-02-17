@@ -149,6 +149,7 @@
                                         <th class="sort" data-sort="amount">Value</th>
                                         <th class="sort" data-sort="margin">Margin</th>
                                         <th class="sort" data-sort="status">Status</th>
+                                        <th class="sort" data-sort="position">Current Approver</th>
                                         <th class="sort" data-sort="action">Action</th>
                                     </tr>
                                 </thead>
@@ -198,6 +199,12 @@
                                             @endphp
                                             <span class="badge {{ $statusClass }} text-uppercase">{{ str_replace('_', ' ', $quote->status) }}</span>
                                         </td>
+                                        <td class="position">
+                                            <div class="d-flex align-items-center">
+                                                <i class="ri-shield-user-line me-2 text-warning fs-16"></i>
+                                                <span class="text-muted fw-medium fs-12">{{ $quote->current_approver_label }}</span>
+                                            </div>
+                                        </td>
                                         <td>
                                             <div class="dropdown d-inline-block">
                                                 <button class="btn btn-soft-secondary btn-sm dropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -230,7 +237,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="8">
+                                        <td colspan="9">
                                             <div class="noresult">
                                                 <div class="text-center">
                                                     <lord-icon src="https://cdn.lordicon.com/msoeawqm.json" trigger="loop" colors="primary:#121331,secondary:#08a88a" style="width:75px;height:75px"></lord-icon>

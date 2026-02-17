@@ -6,16 +6,19 @@
 
 @push('styles')
 <style>
-    /* Wrapper to handle positioning and hiding */
-    .unit-select-wrapper {
-        position: relative;
+    /* Fix Table Select2 Width - Only target the input container */
+    #items_table .select2-container {
+        width: 100% !important;
+        min-width: 160px; /* Ensure a decent width */
     }
+    /* Select2 Selection Styling */
     .select2-container .select2-selection--single {
         height: 38px !important;
         border: 1px solid #dee2e6 !important;
         display: flex !important;
         align-items: center !important;
         background-color: #fff !important;
+        border-radius: 6px !important;
     }
     .select2-container--default .select2-selection--single .select2-selection__arrow {
         height: 36px !important;
@@ -26,10 +29,46 @@
         padding-left: 12px !important;
         color: #495057 !important;
     }
-    /* Fix Table Select2 Width */
-    /* Fix Table Select2 Width - Only target the input container, not the dropdown */
-    .item-table .select2-container {
+    /* Select2 Dropdown & Search Styling */
+    .select2-dropdown {
+        border: 1px solid #e9ebec !important;
+        box-shadow: 0 5px 10px rgba(30, 32, 37, 0.12) !important;
+        z-index: 9999 !important;
+        border-radius: 6px !important;
+        background-color: #fff !important;
+    }
+    .select2-container--open {
+        z-index: 9999 !important;
+    }
+    .select2-search--dropdown {
+        padding: 8px !important;
+        background-color: #fff !important;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border: 1px solid #dee2e6 !important;
+        border-radius: 4px !important;
+        padding: 6px 10px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
+        outline: none !important;
+    }
+    .select2-results__options {
+        max-height: 250px !important;
+        overflow-y: auto !important;
+    }
+    .select2-results__option {
+        padding: 8px 12px !important;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected] {
+        background-color: #405189 !important;
+        color: #fff !important;
+    }
+    /* Horizontal Scrolling for Table */
+    .table-responsive {
+        overflow-x: auto !important;
+        overflow-y: visible !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 50px;
     }
     /* Critical: Hide the original select that gets styled by Bootstrap/Theme */
     select.select2-hidden-accessible {
@@ -345,12 +384,11 @@
                                                 <table class="table table-bordered align-middle" id="items_table">
                                                     <thead class="table-light">
                                                         <tr>
-                                                            <th width="25%">Unit/Equipment</th>
+                                                            <th width="30%">Unit/Equipment</th>
                                                             <th width="15%">Rate (Rp)</th>
                                                             <th width="10%">Qty</th>
                                                             <th width="15%">Duration</th>
-                                                            <th width="10%">Unit</th>
-                                                            <th width="20%">Total (Rp)</th>
+                                                            <th width="15%">Total (Rp)</th>
                                                             <th width="5%"></th>
                                                         </tr>
                                                     </thead>
@@ -359,7 +397,7 @@
                                                     </tbody>
                                                     <tfoot class="table-light">
                                                         <tr>
-                                                            <td colspan="5" class="text-end fw-bold">Total Project Value</td>
+                                                            <td colspan="4" class="text-end fw-bold">Total Project Value</td>
                                                             <td class="fw-bold fs-16" id="total_project_value_display">Rp 0</td>
                                                             <td></td>
                                                         </tr>
@@ -506,30 +544,22 @@
 <template id="item_row_template">
     <tr>
         <td>
-            <select class="item-unit-select-init" name="items[{index}][unit_name]" required>
+            <select class="item-unit-select-init select2" name="items[{index}][unit_name]" required>
                 <option value="">Select Unit</option>
             </select>
             <input type="hidden" name="items[{index}][unit_id]" class="item-unit-id">
         </td>
         <td>
-            <input type="number" class="form-control item-rate" name="items[{index}][rate]" placeholder="0" min="0" step="0.01" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" required>
+            <input type="text" class="form-control item-rate" name="items[{index}][rate]" placeholder="0" required>
         </td>
         <td>
-            <input type="number" class="form-control item-qty" name="items[{index}][quantity]" value="1" min="0" step="0.01" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" required>
+            <input type="text" class="form-control item-qty" name="items[{index}][quantity]" value="1" required>
         </td>
         <td>
             <div class="input-group">
                 <input type="number" class="form-control item-duration" name="items[{index}][duration]" value="1" min="1" required>
-                <span class="input-group-text p-0 border-0 overflow-hidden">
-                    <select class="form-select border-0 bg-light" name="items[{index}][duration_unit]" style="width: auto;">
-                        <option value="MONTH">MO</option>
-                        <option value="DAY">DAY</option>
-                        <option value="TRIP">TRIP</option>
-                    </select>
-                </span>
             </div>
         </td>
-        <td class="text-center align-middle item-unit-display">-</td>
         <td class="text-end align-middle item-total">Rp 0</td>
         <td class="text-center align-middle">
             <button type="button" class="btn btn-sm btn-soft-danger remove-item"><i class="ri-delete-bin-line"></i></button>
@@ -714,9 +744,37 @@
             
             // Initialize Select2 for the new row with a small delay to avoid race conditions
             setTimeout(function() {
-                row.find('.item-unit-select-init').select2({
+                var s2 = row.find('.item-unit-select-init').select2({
+                    dropdownParent: row,
                     placeholder: "Select Unit",
                     width: '100%'
+                });
+
+                // Duplicate Check
+                s2.on('select2:select', function(e) {
+                    var selectedValue = e.params.data.id;
+                    var isDuplicate = false;
+                    var currentSelect = $(this);
+
+                    $('#items_table tbody tr').each(function() {
+                        var otherSelect = $(this).find('.item-unit-select-init');
+                        if (otherSelect.length && otherSelect[0] !== currentSelect[0]) {
+                            if (otherSelect.val() === selectedValue) {
+                                isDuplicate = true;
+                                return false; // Break loop
+                            }
+                        }
+                    });
+
+                    if (isDuplicate) {
+                        Swal.fire({
+                            title: 'Duplicate Unit',
+                            text: 'This unit is already added to the list.',
+                            icon: 'warning',
+                            confirmButtonColor: '#405189'
+                        });
+                        currentSelect.val(null).trigger('change');
+                    }
                 });
             }, 100);
         });
@@ -728,14 +786,43 @@
         
         $(document).on('input change', '.item-rate, .item-qty, .item-duration', function() {
             var row = $(this).closest('tr');
+            
+            // Unformat and then format with thousand separators
+            var rawValue = this.value.replace(/[^0-9+]/g, '');
+            if (rawValue !== "") {
+                if ($(this).hasClass('item-duration')) {
+                    this.value = rawValue; // Keep simple for duration
+                } else {
+                    this.value = formatNumberID(rawValue);
+                }
+            }
+
             calculateRow(row);
             calculateGrandTotal();
         });
 
+        $(document).on('keydown', '.item-rate, .item-qty, .item-duration', function(e) {
+            var invalidChars = ['e', 'E', '+', '-'];
+            if (invalidChars.includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        function formatNumberID(value) {
+            if (!value) return "";
+            var val = value.toString().replace(/[^0-9]/g, "");
+            return val.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function unformatNumber(value) {
+            if (!value) return 0;
+            return parseFloat(value.toString().replace(/\./g, '')) || 0;
+        }
+
         function calculateRow(row) {
-            var rate = parseFloat(row.find('.item-rate').val()) || 0;
-            var qty = parseFloat(row.find('.item-qty').val()) || 0;
-            var dur = parseFloat(row.find('.item-duration').val()) || 0;
+            var rate = unformatNumber(row.find('.item-rate').val());
+            var qty = unformatNumber(row.find('.item-qty').val());
+            var dur = unformatNumber(row.find('.item-duration').val());
             
             var total = rate * qty * dur;
             row.find('.item-total').text(formatCurrency(total));
@@ -813,7 +900,19 @@
             $.ajax({
                 url: form.attr('action'),
                 method: 'POST',
-                data: form.serialize(),
+                data: (function() {
+                    // Get all form data as an array
+                    var formData = form.serializeArray();
+                    
+                    // Sanitize numeric fields by removing thousand separators
+                    $.each(formData, function(i, field) {
+                        if (field.name.includes('[rate]') || field.name.includes('[quantity]')) {
+                            field.value = field.value.toString().replace(/\./g, '');
+                        }
+                    });
+                    
+                    return $.param(formData);
+                })(),
                 success: function(response) {
                     Swal.fire({
                         title: 'Success', 

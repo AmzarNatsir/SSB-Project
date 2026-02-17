@@ -71,6 +71,11 @@ class Quotation extends Model
         return $this->hasMany(QuotationItem::class);
     }
 
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(QuotationApproval::class)->orderBy('created_at', 'desc');
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

@@ -11,10 +11,12 @@ use Illuminate\Support\Facades\Http;
 class QuotationController extends Controller
 {
     protected $service;
+    protected $flowService;
 
-    public function __construct(QuotationService $service)
+    public function __construct(QuotationService $service, \App\Services\ApprovalFlowService $flowService)
     {
         $this->service = $service;
+        $this->flowService = $flowService;
     }
 
     public function index()
@@ -23,6 +25,29 @@ class QuotationController extends Controller
             ->latest()
             ->paginate(10);
             
+        // Resolve current approvers for the current page
+        $levels = $this->flowService->getLevels('QUOTATION');
+        
+        $quotations->getCollection()->transform(function ($quote) use ($levels) {
+            $currentApprover = '-';
+            if ($quote->status === 'SUBMITTED' && $quote->current_approval_level > 0) {
+                $level = $levels->where('level_number', $quote->current_approval_level)->first();
+                if ($level) {
+                    if ($level->approver_type->value === 'ROLE') {
+                        $role = \Spatie\Permission\Models\Role::find($level->approver_role_id);
+                        $currentApprover = $role ? $role->name : 'Unknown Role';
+                    } elseif ($level->approver_type->value === 'USER') {
+                        $user = \App\Models\User::find($level->approver_user_id);
+                        $currentApprover = $user ? $user->name : 'Unknown User';
+                    } else {
+                        $currentApprover = $level->approver_type->label();
+                    }
+                }
+            }
+            $quote->current_approver_label = $currentApprover;
+            return $quote;
+        });
+
         $kpi = [
             'draft' => Quotation::where('status', 'DRAFT')->count(),
             'pending' => Quotation::where('status', 'SUBMITTED')->count(),
@@ -64,8 +89,61 @@ class QuotationController extends Controller
 
     public function show(Quotation $quotation)
     {
-        $quotation->load('items', 'project', 'budget');
-        return view('quotations.show', compact('quotation'));
+        $quotation->load(['items', 'project', 'budget', 'approvals.approver', 'creator']);
+        
+        $currentApprover = null;
+        $canApprove = false;
+
+        if ($quotation->status === 'SUBMITTED' && $quotation->current_approval_level > 0) {
+            $levels = $this->flowService->getLevels('QUOTATION');
+            $level = $levels->where('level_number', $quotation->current_approval_level)->first();
+            
+            if ($level) {
+                // Determine display label
+                if ($level->approver_type->value === 'ROLE') {
+                    $role = \Spatie\Permission\Models\Role::find($level->approver_role_id);
+                    $currentApprover = $role ? $role->name : 'Unknown Role';
+                } elseif ($level->approver_type->value === 'USER') {
+                    $user = \App\Models\User::find($level->approver_user_id);
+                    $currentApprover = $user ? $user->name : 'Unknown User';
+                } else {
+                    $currentApprover = $level->approver_type->label();
+                }
+
+                // Check authorization
+                $canApprove = $this->flowService->isUserApprover(auth()->id(), $level, $quotation);
+            }
+        }
+
+        return view('quotations.show', compact('quotation', 'currentApprover', 'canApprove'));
+    }
+
+    public function approve(Request $request, Quotation $quotation)
+    {
+        $validated = $request->validate([
+            'decision' => 'required|string', // APPROVED, REJECTED, REVISION
+            'notes' => 'nullable|string',
+        ]);
+
+        try {
+            // Re-verify authorization on server side
+            $levels = $this->flowService->getLevels('QUOTATION');
+            $level = $levels->where('level_number', $quotation->current_approval_level)->first();
+            
+            if (!$level || !$this->flowService->isUserApprover(auth()->id(), $level, $quotation)) {
+                return back()->with('error', 'Unauthorized. You are not the approver for the current level.');
+            }
+
+            $this->service->processApproval(
+                $quotation, 
+                auth()->id(), 
+                $validated['decision'], 
+                $validated['notes']
+            );
+            return back()->with('success', 'Decision recorded successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
     
     public function update(Request $request, Quotation $quotation)
