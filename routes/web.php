@@ -82,8 +82,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('negotiations/{negotiation}/approve', [\App\Http\Controllers\NegotiationController::class, 'approve'])->name('negotiations.approve');
     Route::get('negotiations/{negotiation}/letter', [\App\Http\Controllers\NegotiationController::class, 'downloadLetter'])->name('negotiations.letter');
 
+    // Unit Requests
+    Route::resource('unit-requests', \App\Http\Controllers\UnitRequestController::class)->parameters(['unit-requests' => 'unitRequest']);
+    Route::post('unit-requests/{unitRequest}/submit', [\App\Http\Controllers\UnitRequestController::class, 'submit'])->name('unit-requests.submit');
+    Route::post('unit-requests/{unitRequest}/approve', [\App\Http\Controllers\UnitRequestController::class, 'approve'])->name('unit-requests.approve');
+    Route::post('unit-requests/{unitRequest}/forward', [\App\Http\Controllers\UnitRequestController::class, 'forwardToWorkshop'])->name('unit-requests.forward');
+    Route::get('unit-requests/{unitRequest}/attachment', [\App\Http\Controllers\UnitRequestController::class, 'downloadAttachment'])->name('unit-requests.attachment');
+
     // ... other protected routes
 });
+
 
 // Temporary: explicit index route for redirection to work if named 'dashboard'
 // Route::get('/index', function () { return view('index'); })->name('index');

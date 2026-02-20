@@ -30,6 +30,11 @@ class RepositoryServiceProvider extends ServiceProvider
             \App\Repositories\Interfaces\IApprovalFlowRepository::class,
             \App\Repositories\ApprovalFlowRepository::class
         );
+
+        $this->app->bind(
+            \App\Repositories\Interfaces\IUnitRequestRepository::class,
+            \App\Repositories\UnitRequestRepository::class
+        );
     }
 
     /**

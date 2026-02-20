@@ -88,6 +88,8 @@
                             <li class="{{ Request::is('budgets*') ? 'active' : '' }}"><a href="{{url('budgets')}}"><i class="ti ti-wallet"></i><span>Project Budgets</span></a></li>
                             <li class="{{ Request::is('quotations*') ? 'active' : '' }}"><a href="{{url('quotations')}}"><i class="ti ti-file-dollar"></i><span>Project Quotations</span></a></li>
                             <li class="{{ Request::is('negotiations*') ? 'active' : '' }}"><a href="{{url('negotiations')}}"><i class="ti ti-scale"></i><span>Price Negotiation</span></a></li>
+                            <li class="{{ Request::is('unit-requests*') ? 'active' : '' }}"><a href="{{ route('unit-requests.index') }}"><i class="ti ti-tools"></i><span>Unit Request</span></a></li>
+
                         </ul>
                     </li>
                     

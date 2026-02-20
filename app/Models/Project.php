@@ -53,7 +53,7 @@ class Project extends Model
 
         static::creating(function ($model) {
             $model->uid = (string) Str::uuid();
-            
+
             // Auto-generate project code and number if not set
             if (empty($model->project_code)) {
                 $model->generateProjectCode();
@@ -92,7 +92,7 @@ class Project extends Model
             $lastProject = self::where('project_number', 'like', "{$prefix}-%")
                 ->orderBy('id', 'desc')
                 ->first();
-            
+
             $nextNumber = $lastProject ? (int)substr($lastProject->project_number, -3) + 1 : 1;
             $sequenceNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
             $this->project_number = "{$prefix}-{$sequenceNumber}";
@@ -100,17 +100,17 @@ class Project extends Model
             // Non-Profit Project: X{YY}.{A|B|C}-{NNN}
             $subCategory = $this->subCategory;
             $subCode = $subCategory ? strtoupper(substr($subCategory->code, 0, 1)) : 'A';
-            
+
             $prefix = "X{$year}.{$subCode}";
             $lastProject = self::where('project_number', 'like', "{$prefix}-%")
                 ->orderBy('id', 'desc')
                 ->first();
-            
+
             $nextNumber = $lastProject ? (int)substr($lastProject->project_number, -3) + 1 : 1;
             $sequenceNumber = str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
             $this->project_number = "{$prefix}-{$sequenceNumber}";
         }
-        
+
         // Update project_code to comply with unique constraint
         // Using project_number as project_code since it is unique
         $this->project_code = $this->project_number;
@@ -170,5 +170,21 @@ class Project extends Model
     public function latest_budget()
     {
         return $this->hasOne(ProjectBudget::class)->latestOfMany();
+    }
+
+    /**
+     * Get the negotiations for the project
+     */
+    public function negotiations()
+    {
+        return $this->hasMany(Negotiation::class);
+    }
+
+    /**
+     * Get the unit requests for the project
+     */
+    public function unitRequests()
+    {
+        return $this->hasMany(UnitRequest::class);
     }
 }

@@ -31,6 +31,12 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\BudgetApproved::class => [
             \App\Listeners\SendApprovalNotification::class,
         ],
+        \App\Events\UnitRequestSubmitted::class => [
+            // Add listeners here (e.g. notify Project Manager)
+        ],
+        \App\Events\UnitRequestApproved::class => [
+            // Add listeners here (e.g. notify requester)
+        ],
     ];
 
     /**

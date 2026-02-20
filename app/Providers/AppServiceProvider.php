@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\UnitRequest;
+use App\Policies\UnitRequestPolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Register UnitRequest policy
+        Gate::policy(UnitRequest::class, UnitRequestPolicy::class);
     }
 }
+

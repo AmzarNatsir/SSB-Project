@@ -19,5 +19,6 @@ class DatabaseSeeder extends Seeder
         ]);
         
         $this->call(ProjectBudgetApprovalTierSeeder::class);
+        $this->call(UnitRequestApprovalFlowSeeder::class);
     }
 }

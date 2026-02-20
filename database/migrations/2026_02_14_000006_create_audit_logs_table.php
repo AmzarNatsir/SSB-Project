@@ -11,19 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('audit_logs', function (Blueprint $table) {
-            $table->id();
-            $table->morphs('auditable'); // auditable_type, auditable_id
-            $table->string('action'); // CREATE, UPDATE, DELETE, SUBMIT, APPROVE, REJECT
-            $table->unsignedBigInteger('user_id')->nullable();
-            $table->json('old_values')->nullable();
-            $table->json('new_values')->nullable();
-            $table->string('ip_address')->nullable();
-            $table->text('user_agent')->nullable();
-            $table->timestamps();
-            
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-        });
+        if (!Schema::hasTable('audit_logs')) {
+            Schema::create('audit_logs', function (Blueprint $table) {
+                $table->id();
+                $table->morphs('auditable'); // auditable_type, auditable_id
+                $table->string('action'); // CREATE, UPDATE, DELETE, SUBMIT, APPROVE, REJECT
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->json('old_values')->nullable();
+                $table->json('new_values')->nullable();
+                $table->string('ip_address')->nullable();
+                $table->text('user_agent')->nullable();
+                $table->timestamps();
+
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            });
+        }
     }
 
     /**
