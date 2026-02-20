@@ -173,11 +173,35 @@ class Project extends Model
     }
 
     /**
+     * Get the quotations for the project
+     */
+    public function quotations()
+    {
+        return $this->hasMany(Quotation::class);
+    }
+
+    /**
+     * Get the latest quotation for the project
+     */
+    public function latest_quotation()
+    {
+        return $this->hasOne(Quotation::class)->latestOfMany();
+    }
+
+    /**
      * Get the negotiations for the project
      */
     public function negotiations()
     {
         return $this->hasMany(Negotiation::class);
+    }
+
+    /**
+     * Get the latest negotiation for the project
+     */
+    public function latest_negotiation()
+    {
+        return $this->hasOne(Negotiation::class)->latestOfMany();
     }
 
     /**

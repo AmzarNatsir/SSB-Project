@@ -65,6 +65,34 @@
                                 <i class="ti ti-photo me-1"></i> Images
                             </button>
                         </li>
+                        @if($project->project_status === 'COMPLETED' && $project->surveys->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="feasibility-tab" data-bs-toggle="tab" data-bs-target="#feasibility" type="button" role="tab">
+                                <i class="ti ti-clipboard-check me-1"></i> Feasibility Project
+                            </button>
+                        </li>
+                        @endif
+                        @if($project->latest_budget && $project->latest_budget->status === \App\Enums\BudgetStatus::BASELINE_APPROVED)
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget" type="button" role="tab">
+                                <i class="ti ti-calculator me-1"></i> Project Budget
+                            </button>
+                        </li>
+                        @endif
+                        @if($project->latest_quotation && $project->latest_quotation->status === 'APPROVED')
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="quotation-tab" data-bs-toggle="tab" data-bs-target="#quotation" type="button" role="tab">
+                                <i class="ti ti-file-invoice me-1"></i> Quotation
+                            </button>
+                        </li>
+                        @endif
+                        @if($project->latest_negotiation && $project->latest_negotiation->status === \App\Enums\NegotiationStatus::APPROVED)
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="negotiation-tab" data-bs-toggle="tab" data-bs-target="#negotiation" type="button" role="tab">
+                                <i class="ti ti-messages me-1"></i> Negotiation
+                            </button>
+                        </li>
+                        @endif
                     </ul>
 
                     <div class="tab-content" id="projectTabsContent">
@@ -319,6 +347,404 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Feasibility Tab -->
+                        @if($project->project_status === 'COMPLETED' && $project->surveys->isNotEmpty())
+                        @php $survey = $project->surveys->first(); @endphp
+                        <div class="tab-pane fade" id="feasibility" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    @php
+                                        $recommendation = $survey->metadata['feasibility_recommendation'] ?? 'No recommendation available';
+                                        $isFeasible = $survey->is_feasible;
+                                    @endphp
+
+                                    <div class="card mb-3 border-{{ $isFeasible ? 'success' : 'danger' }}">
+                                        <div class="card-header bg-{{ $isFeasible ? 'success' : 'danger' }}-transparent">
+                                            <h5 class="card-title mb-0 text-{{ $isFeasible ? 'success' : 'danger' }}">
+                                                <i class="ti ti-{{ $isFeasible ? 'check-circle' : 'x-circle' }} me-2"></i>
+                                                Feasibility Assessment Result
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row align-items-center mb-3">
+                                                <div class="col-md-6">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar avatar-xl bg-{{ $isFeasible ? 'success' : 'danger' }}-transparent rounded me-3">
+                                                            <i class="ti ti-{{ $isFeasible ? 'thumb-up' : 'thumb-down' }} fs-32 text-{{ $isFeasible ? 'success' : 'danger' }}"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1">Feasibility Status</h6>
+                                                            <h4 class="mb-0 text-{{ $isFeasible ? 'success' : 'danger' }}">
+                                                                {{ $isFeasible ? 'FEASIBLE' : 'NOT FEASIBLE' }}
+                                                            </h4>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 text-md-end">
+                                                    <h6 class="mb-1">Total Score</h6>
+                                                    <h2 class="mb-0 text-{{ $isFeasible ? 'success' : 'danger' }}">
+                                                        {{ number_format($survey->total_score, 2) }}
+                                                        <small class="text-muted fs-6">/100</small>
+                                                    </h2>
+                                                </div>
+                                            </div>
+
+                                            <div class="alert alert-{{ $isFeasible ? 'success' : 'danger' }} mb-0">
+                                                <h6 class="alert-heading">
+                                                    <i class="ti ti-bulb me-2"></i>Recommendation
+                                                </h6>
+                                                <p class="mb-0">{{ $recommendation }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header">
+                                                    <h6 class="card-title mb-0">Survey info</h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <table class="table table-sm mb-0">
+                                                        <tr>
+                                                            <td class="text-muted" style="width: 150px;">Survey Number</td>
+                                                            <td class="fw-semibold">: {{ $survey->survey_number ?? '-' }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted">Scheduled At</td>
+                                                            <td class="fw-semibold">: {{ $survey->scheduled_at ? $survey->scheduled_at->format('d M Y') : '-' }}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-muted">Completed At</td>
+                                                            <td class="fw-semibold">: {{ $survey->updated_at->format('d M Y') }}</td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card mb-3">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <h6 class="card-title mb-0">Supporting Documents</h6>
+                                                    <a href="{{ route('project-survey.show', $survey->uid) }}" class="btn btn-sm btn-primary">
+                                                        <i class="ti ti-external-link"></i> Full Details
+                                                    </a>
+                                                </div>
+                                                <div class="card-body">
+                                                    @if($survey->is_skipped)
+                                                        <div class="alert alert-warning mb-0">
+                                                            <i class="ti ti-alert-triangle me-2"></i>This survey was skipped.
+                                                        </div>
+                                                    @else
+                                                        <p class="text-muted small mb-0">This project has passed the feasibility survey stage. You can view all scores, team members, and documents in the full survey report.</p>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Budget Tab -->
+                        @if($project->latest_budget && $project->latest_budget->status === \App\Enums\BudgetStatus::BASELINE_APPROVED)
+                        @php $budget = $project->latest_budget; @endphp
+                        <div class="tab-pane fade" id="budget" role="tabpanel">
+                            <div class="row mb-4">
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-primary-transparent overflow-hidden mb-3">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <p class="text-muted mb-1 fw-medium fs-13">Total HPP (COGS)</p>
+                                                    <h4 class="mb-0 fw-bold">Rp {{ number_format($budget->total_hpp, 0, ',', '.') }}</h4>
+                                                </div>
+                                                <div class="bg-primary text-white p-2 rounded">
+                                                    <i class="ti ti-calculator fs-20"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-success-transparent overflow-hidden mb-3">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <p class="text-muted mb-1 fw-medium fs-13">Profit Margin ({{ $budget->profit_margin_percent ?? 0 }}%)</p>
+                                                    <h4 class="mb-0 fw-bold text-success">Rp {{ number_format($budget->selling_price - $budget->total_hpp, 0, ',', '.') }}</h4>
+                                                </div>
+                                                <div class="bg-success text-white p-2 rounded">
+                                                    <i class="ti ti-chart-pie fs-20"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-0 bg-info-transparent overflow-hidden mb-3">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <p class="text-muted mb-1 fw-medium fs-13">Selling Price</p>
+                                                    <h4 class="mb-0 fw-bold text-info">Rp {{ number_format($budget->selling_price, 0, ',', '.') }}</h4>
+                                                </div>
+                                                <div class="bg-info text-white p-2 rounded">
+                                                    <i class="ti ti-currency-dollar fs-20"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-list-check me-2 text-primary"></i>Cost Breakdown
+                                            </h5>
+                                            <a href="{{ route('budgets.show', $budget->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-external-link me-1"></i> View Full Budget
+                                            </a>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="nav nav-pills nav-fill mb-3 p-1 bg-light rounded" role="tablist">
+                                                @foreach(App\Enums\BudgetCategory::cases() as $category)
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link {{ $loop->first ? 'active' : '' }} d-flex align-items-center justify-content-center gap-1 py-1 fs-12" href="#budget_tab_{{ $category->value }}" data-bs-toggle="pill" role="tab">
+                                                            <i class="ti {{ $category->icon() }} fs-14"></i>
+                                                            <span class="d-none d-lg-inline">{{ $category->label() }}</span>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                            
+                                            <div class="tab-content pt-2">
+                                                @foreach(App\Enums\BudgetCategory::cases() as $category)
+                                                    <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="budget_tab_{{ $category->value }}" role="tabpanel">
+                                                        <div class="table-responsive">
+                                                            <table class="table table-nowrap table-hover border-top-0 table-sm">
+                                                                <thead class="bg-light-500">
+                                                                    <tr>
+                                                                        <th class="border-0">Item Description</th>
+                                                                        <th class="text-end border-0">Qty</th>
+                                                                        <th class="border-0 text-center">Unit</th>
+                                                                        <th class="text-end border-0">Unit Cost</th>
+                                                                        <th class="text-end border-0">Total</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody class="border-0">
+                                                                    @php
+                                                                        $categoryItems = $budget->items->where('category', $category);
+                                                                        $categoryTotal = 0;
+                                                                    @endphp
+                                                                    @forelse($categoryItems as $item)
+                                                                        @php $categoryTotal += $item->total_cost; @endphp
+                                                                        <tr>
+                                                                            <td class="fw-medium text-dark">{{ $item->item_name }}</td>
+                                                                            <td class="text-end">{{ number_format($item->qty, 2) }}</td>
+                                                                            <td class="text-center"><span class="badge bg-light text-dark border">{{ $item->units }}</span></td>
+                                                                            <td class="text-end">Rp {{ number_format($item->unit_cost, 0, ',', '.') }}</td>
+                                                                            <td class="text-end fw-bold text-primary">Rp {{ number_format($item->total_cost, 0, ',', '.') }}</td>
+                                                                        </tr>
+                                                                    @empty
+                                                                        <tr>
+                                                                            <td colspan="5" class="text-center py-4 text-muted">
+                                                                                No items found
+                                                                            </td>
+                                                                        </tr>
+                                                                    @endforelse
+                                                                </tbody>
+                                                                @if($categoryItems->count() > 0)
+                                                                <tfoot class="bg-light-500">
+                                                                    <tr>
+                                                                        <th colspan="4" class="text-end border-0 px-3 py-2">Subtotal:</th>
+                                                                        <th class="text-end border-0 px-3 py-2 fs-14 text-primary">Rp {{ number_format($categoryTotal, 0, ',', '.') }}</th>
+                                                                    </tr>
+                                                                </tfoot>
+                                                                @endif
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Quotation Tab -->
+                        @if($project->latest_quotation && $project->latest_quotation->status === 'APPROVED')
+                        @php $quotation = $project->latest_quotation; @endphp
+                        <div class="tab-pane fade" id="quotation" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-file-invoice me-2 text-primary"></i>Quotation Details
+                                            </h5>
+                                            <a href="{{ route('quotations.show', $quotation->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-external-link me-1"></i> View Full Quotation
+                                            </a>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row mb-4">
+                                                <div class="col-md-6">
+                                                    <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Project Information</h6>
+                                                    <h5 class="mb-1 text-primary">{{ $quotation->project->project_name ?? 'N/A' }}</h5>
+                                                    <p class="text-muted mb-2 small"><i class="ti ti-hash me-1"></i> {{ $quotation->project->project_number ?? 'N/A' }}</p>
+                                                    <p class="text-muted mb-0 small"><i class="ti ti-calendar-event me-1"></i> Created on {{ $quotation->created_at->format('d M, Y') }}</p>
+                                                </div>
+                                                <div class="col-md-6 text-md-end mt-4 mt-md-0">
+                                                    <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Financial Summary</h6>
+                                                    <h3 class="text-primary mb-1">Rp {{ number_format($quotation->selling_price, 0, ',', '.') }}</h3>
+                                                    <p class="text-muted small mb-0">Valid Until: <span class="text-dark fw-medium">{{ $quotation->valid_until ? $quotation->valid_until->format('d M, Y') : 'N/A' }}</span></p>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="text-muted text-uppercase fw-semibold mb-3 small">Unit Selection & Rate Breakdown</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-hover border-top-0 table-sm">
+                                                    <thead class="bg-light-500">
+                                                        <tr>
+                                                            <th class="border-0">Unit / Equipment</th>
+                                                            <th class="text-end border-0">Rate (Rp)</th>
+                                                            <th class="text-center border-0">Qty</th>
+                                                            <th class="text-center border-0">Duration</th>
+                                                            <th class="text-end border-0">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="border-0">
+                                                        @foreach($quotation->items as $item)
+                                                        <tr>
+                                                            <td class="fw-medium text-dark">{{ $item->unit_name }}</td>
+                                                            <td class="text-end">Rp {{ number_format($item->rate, 0, ',', '.') }}</td>
+                                                            <td class="text-center">{{ $item->quantity }}</td>
+                                                            <td class="text-center">{{ $item->duration }}</td>
+                                                            <td class="text-end fw-bold text-primary">Rp {{ number_format($item->rate * $item->quantity * $item->duration, 0, ',', '.') }}</td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                    <tfoot class="bg-light-500">
+                                                        <tr>
+                                                            <th colspan="4" class="text-end border-0 px-3 py-2">Total Project Value:</th>
+                                                            <th class="text-end border-0 px-3 py-2 fs-14 text-primary">Rp {{ number_format($quotation->selling_price, 0, ',', '.') }}</th>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+
+                                            @if($quotation->terms_conditions)
+                                            <div class="mt-4 p-3 bg-light rounded-3">
+                                                <h6 class="text-muted text-uppercase fw-semibold mb-2 fs-11">Terms & Conditions</h6>
+                                                <p class="text-muted mb-0 small" style="white-space: pre-wrap;">{{ $quotation->terms_conditions }}</p>
+                                            </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Negotiation Tab -->
+                        @if($project->latest_negotiation && $project->latest_negotiation->status === \App\Enums\NegotiationStatus::APPROVED)
+                        @php $negotiation = $project->latest_negotiation; @endphp
+                        <div class="tab-pane fade" id="negotiation" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-messages me-2 text-primary"></i>Negotiation History
+                                            </h5>
+                                            <a href="{{ route('negotiations.show', $negotiation->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-external-link me-1"></i> View Full Negotiation
+                                            </a>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row align-items-center mb-4">
+                                                <div class="col-md-6">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar avatar-lg bg-success-transparent rounded me-3">
+                                                            <i class="ti ti-check fs-24 text-success"></i>
+                                                        </div>
+                                                        <div>
+                                                            <h6 class="mb-1 text-muted small">Final Agreed Value</h6>
+                                                            <h3 class="mb-0 text-success">Rp {{ number_format($negotiation->final_agreed_value, 0, ',', '.') }}</h3>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 text-md-end">
+                                                    <p class="mb-1 text-muted small">Negotiation #{{ $negotiation->negotiation_number }}</p>
+                                                    <span class="badge bg-success-transparent text-success border border-success-subtle px-3 py-2 rounded-pill">
+                                                        {{ $negotiation->status->label() }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div class="ms-md-4 border-start border-2 border-primary-light ps-4 py-2">
+                                                <!-- Initial Quote -->
+                                                <div class="position-relative mb-4">
+                                                    <div class="position-absolute translate-middle-x bg-primary rounded-circle" style="width: 12px; height: 12px; left: -32.5px; top: 10px; border: 3px solid #fff;"></div>
+                                                    <h6 class="mb-1 fw-bold">Initial Quotation Submitted</h6>
+                                                    <p class="text-muted small mb-2">{{ $negotiation->quotation->created_at->format('d M Y, H:i') }}</p>
+                                                    <div class="bg-light p-2 rounded d-inline-block">
+                                                        <span class="text-muted fs-11 text-uppercase d-block">Company Offer</span>
+                                                        <span class="fw-bold text-dark">Rp {{ number_format($negotiation->quotation->selling_price, 0, ',', '.') }}</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Rounds -->
+                                                @foreach($negotiation->rounds as $round)
+                                                <div class="position-relative mb-4">
+                                                    <div class="position-absolute translate-middle-x bg-info rounded-circle" style="width: 12px; height: 12px; left: -32.5px; top: 10px; border: 3px solid #fff;"></div>
+                                                    <h6 class="mb-1 fw-bold text-info">Round {{ $round->round_number }} Negotiation</h6>
+                                                    <p class="text-muted small mb-2">Meeting on {{ $round->meeting_date->format('d M Y') }}</p>
+                                                    
+                                                    <div class="row g-2">
+                                                        <div class="col-auto">
+                                                            <div class="bg-danger-transparent border border-danger-subtle p-2 rounded">
+                                                                <span class="fs-11 text-uppercase text-danger d-block">Client Offer</span>
+                                                                <span class="fw-bold text-danger">Rp {{ number_format($round->client_offer_value, 0, ',', '.') }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-auto">
+                                                            <div class="bg-success-transparent border border-success-subtle p-2 rounded">
+                                                                <span class="fs-11 text-uppercase text-success d-block">Company Counter</span>
+                                                                <span class="fw-bold text-success">Rp {{ number_format($round->company_counter_offer, 0, ',', '.') }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @if($round->summary_notes)
+                                                    <p class="text-muted small mt-2 mb-0 italic">"{{ $round->summary_notes }}"</p>
+                                                    @endif
+                                                </div>
+                                                @endforeach
+
+                                                <!-- Final Result -->
+                                                <div class="position-relative">
+                                                    <div class="position-absolute translate-middle-x bg-success rounded-circle" style="width: 12px; height: 12px; left: -32.5px; top: 10px; border: 3px solid #fff;"></div>
+                                                    <h6 class="mb-1 fw-bold text-success">Deal Sealed</h6>
+                                                    <p class="text-muted small mb-2">{{ $negotiation->approved_at ? $negotiation->approved_at->format('d M Y, H:i') : '' }}</p>
+                                                    <div class="alert alert-success d-inline-block py-2 px-3 mb-0">
+                                                        Final Agreed Price: <strong>Rp {{ number_format($negotiation->final_agreed_value, 0, ',', '.') }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

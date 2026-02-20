@@ -110,7 +110,11 @@ class ProjectController extends Controller
      */
     public function show(string $id)
     {
-        $project = Project::with(['category', 'subCategory', 'pic', 'equipmentRentalRate', 'images'])
+        $project = Project::with([
+                'category', 'subCategory', 'pic', 'equipmentRentalRate', 'images', 
+                'surveys', 'latest_budget.items', 'latest_quotation.items', 
+                'latest_negotiation.rounds'
+            ])
             ->where('uid', $id)
             ->firstOrFail();
         

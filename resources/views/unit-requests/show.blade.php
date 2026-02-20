@@ -154,6 +154,7 @@
                                         <th class="text-center" style="width:80px">Qty</th>
                                         <th class="text-center" style="width:100px">Duration (Days)</th>
                                         <th>Remarks</th>
+                                        <th class="text-center" style="width:120px">Workshop Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -164,10 +165,19 @@
                                         <td class="text-center">{{ $item->qty }}</td>
                                         <td class="text-center">{{ $item->duration_days ?? '-' }}</td>
                                         <td>{{ $item->remarks ?? '-' }}</td>
+                                        <td class="text-center">
+                                            @if(is_null($item->unit_ready))
+                                                <span class="badge badge-soft-secondary">Pending</span>
+                                            @elseif($item->unit_ready)
+                                                <span class="badge badge-soft-success">Ready</span>
+                                            @else
+                                                <span class="badge badge-soft-danger">Not Ready</span>
+                                            @endif
+                                        </td>
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-3">No items.</td>
+                                        <td colspan="6" class="text-center text-muted py-3">No items.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>

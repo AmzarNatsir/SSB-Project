@@ -18,12 +18,15 @@ class UnitRequestItem extends Model
         'qty',
         'duration_days',
         'remarks',
+        'unit_ready',
     ];
 
     protected $casts = [
         'qty' => 'integer',
         'duration_days' => 'integer',
+        'unit_ready' => 'boolean',
     ];
+
 
     // Relationships
     public function unitRequest(): BelongsTo
