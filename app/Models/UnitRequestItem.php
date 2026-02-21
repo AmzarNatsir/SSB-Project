@@ -19,6 +19,8 @@ class UnitRequestItem extends Model
         'duration_days',
         'remarks',
         'unit_ready',
+        'operator_id',
+        'operator_name',
     ];
 
     protected $casts = [

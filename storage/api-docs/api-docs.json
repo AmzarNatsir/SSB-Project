@@ -168,6 +168,14 @@
                                     "unit_ready": {
                                         "type": "boolean",
                                         "example": true
+                                    },
+                                    "operator_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "operator_name": {
+                                        "type": "string",
+                                        "example": "Operator Name"
                                     }
                                 },
                                 "type": "object"

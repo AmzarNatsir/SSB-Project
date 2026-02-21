@@ -165,7 +165,9 @@ class ApiUnitRequestController extends Controller
             content: new OA\JsonContent(
                 required: ["unit_ready"],
                 properties: [
-                    new OA\Property(property: "unit_ready", type: "boolean", example: true)
+                    new OA\Property(property: "unit_ready", type: "boolean", example: true),
+                    new OA\Property(property: "operator_id", type: "integer", example: 1),
+                    new OA\Property(property: "operator_name", type: "string", example: "Operator Name")
                 ]
             )
         ),
@@ -186,7 +188,9 @@ class ApiUnitRequestController extends Controller
 
         $item = \App\Models\UnitRequestItem::findOrFail($id);
         $item->update([
-            'unit_ready' => $request->unit_ready
+            'unit_ready' => $request->unit_ready,
+            'operator_id' => $request->operator_id,
+            'operator_name' => $request->operator_name
         ]);
 
         return response()->json([
