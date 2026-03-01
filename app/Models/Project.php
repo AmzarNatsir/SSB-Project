@@ -211,4 +211,20 @@ class Project extends Model
     {
         return $this->hasMany(UnitRequest::class);
     }
+
+    /**
+     * Get the contracts for the project
+     */
+    public function contracts()
+    {
+        return $this->hasMany(Contract::class);
+    }
+
+    /**
+     * Get the latest contract for the project
+     */
+    public function latest_contract()
+    {
+        return $this->hasOne(Contract::class)->latestOfMany();
+    }
 }

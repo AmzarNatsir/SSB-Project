@@ -57,9 +57,15 @@
                                     <i class="ti ti-dashboard"></i><span>Dashboard</span><span class="menu-arrow"></span>
                                 </a>
                                 <ul>
-                                    <li><a href="{{url('index')}}" class="{{ Request::is('index', '/') ? 'active' : '' }}">Deals Dashboard</a></li>
-                                    <li><a href="{{url('leads-dashboard')}}" class="{{ Request::is('leads-dashboard') ? 'active' : '' }}">Leads Dashboard</a></li>
-                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Dashboard</a></li>
+                                    <li><a href="{{url('index')}}" class="{{ Request::is('index', '/') ? 'active' : '' }}">Fuel Usage</a></li>
+                                    <li><a href="{{url('leads-dashboard')}}" class="{{ Request::is('leads-dashboard') ? 'active' : '' }}">Spare Part Usage</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Survey Results</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Budget Realization</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Realization</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Accounts Receivable Aging</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Collection Performance</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Bad Debt Analysis</a></li>
+                                    <li><a href="{{url('project-dashboard')}}" class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Petty Cash Transaction</a></li>
                                 </ul>
                             </li>
                             <li class="menu-title"><span>Project Settings</span></li>
@@ -80,7 +86,7 @@
                             </li>
                         </ul>
                     </li>
-                    <li class="menu-title"><span>APPLICATIONS</span></li>
+                    <li class="menu-title"><span>PROJECT</span></li>
                     <li>							
                         <ul>
                             <li class="{{ Request::is('projects') ? 'active' : '' }}"><a href="{{url('projects')}}"><i class="ti ti-atom-2"></i><span>Projects</span></a></li>
@@ -88,12 +94,35 @@
                             <li class="{{ Request::is('budgets*') ? 'active' : '' }}"><a href="{{url('budgets')}}"><i class="ti ti-wallet"></i><span>Project Budgets</span></a></li>
                             <li class="{{ Request::is('quotations*') ? 'active' : '' }}"><a href="{{url('quotations')}}"><i class="ti ti-file-dollar"></i><span>Project Quotations</span></a></li>
                             <li class="{{ Request::is('negotiations*') ? 'active' : '' }}"><a href="{{url('negotiations')}}"><i class="ti ti-scale"></i><span>Price Negotiation</span></a></li>
-                            <li class="{{ Request::is('unit-requests*') ? 'active' : '' }}"><a href="{{ route('unit-requests.index') }}"><i class="ti ti-tools"></i><span>Unit Request</span></a></li>
-
+                            <li class="{{ Request::is('final-contracts*') ? 'active' : '' }}"><a href="{{url('final-contracts')}}"><i class="ti ti-file"></i><span>Final Contract</span></a></li>
+                            <li class="{{ Request::is('unit-requests*') ? 'active' : '' }}"><a href="{{ route('unit-requests.index') }}"><i class="ti ti-car"></i><span>Unit Request</span></a></li>
+                            <li class="{{ Request::is('unit-replacement*') ? 'active' : '' }}"><a href="#"><i class="ti ti-car"></i><span>Unit Replacement</span></a></li>
+                            <li class="{{ Request::is('unit-return*') ? 'active' : '' }}"><a href="#"><i class="ti ti-car"></i><span>Unit Return</span></a></li>
+                            <li class="{{ Request::is('unit-transfer*') ? 'active' : '' }}"><a href="#"><i class="ti ti-car"></i><span>Unit Transfer</span></a></li>
                         </ul>
                     </li>
-                    
-                    <li class="menu-title"><span>Reports</span></li>
+                    <li class="menu-title"><span>IMPLEMENTATION</span></li>
+                    <li>							
+                        <ul>
+                            <li class="{{ Request::is('workforce-formation*') ? 'active' : '' }}"><a href="#"><i class="ti ti-users"></i><span>Workforce Formation</span></a></li>
+                            <li class="{{ Request::is('unit-formation*') ? 'active' : '' }}"><a href="#"><i class="ti ti-car"></i><span>Unit Formation</span></a></li>
+                            <li class="{{ Request::is('timesheet-journal*') ? 'active' : '' }}"><a href="#"><i class="ti ti-calendar"></i><span>Timesheet Journal</span></a></li>
+                            <li class="{{ Request::is('work-realization*') ? 'active' : '' }}"><a href="#"><i class="ti ti-list"></i><span>Work Realization</span></a></li>
+                            <li class="{{ Request::is('invoice*') ? 'active' : '' }}"><a href="#"><i class="ti ti-invoice"></i><span>Invoice</span></a></li>
+                            <li class="{{ Request::is('receivables*') ? 'active' : '' }}"><a href="#"><i class="ti ti-invoice"></i><span>Receivables</span></a></li>
+                            <li class="{{ Request::is('receivables-settlement*') ? 'active' : '' }}"><a href="#"><i class="ti ti-invoice"></i><span>Receivables Settlement</span></a></li>
+                            <li class="{{ Request::is('project-adjustment') ? 'active' : '' }}"><a href="#"><i class="ti ti-invoice"></i><span>Project Adjustment</span></a></li>
+                        </ul>
+                    </li>
+                    <li class="menu-title"><span>PETTY CASH MANAGEMENT</span></li>
+                    <li>							
+                        <ul>
+                            <li class="{{ Request::is('petty-cash-request*') ? 'active' : '' }}"><a href="#"><i class="ti ti-cash"></i><span>Petty Cash Request</span></a></li>
+                            <li class="{{ Request::is('payment-of-fees*') ? 'active' : '' }}"><a href="#"><i class="ti ti-cash"></i><span>Payment of Fees</span></a></li>
+                            <li class="{{ Request::is('cash-purchase*') ? 'active' : '' }}"><a href="#"><i class="ti ti-cash"></i><span>Cash Purchase</span></a></li>
+                        </ul>
+                    </li>
+                    <li class="menu-title"><span>REPORTS</span></li>
                     <li>
                         <ul>
                             <li class="submenu">
@@ -102,17 +131,23 @@
                                 </a>
                                 <ul>
                                     <li><a class="{{ Request::is('lead-reports') ? 'active' : '' }}"
-                                            href="{{ url('lead-reports') }}">Lead Reports</a></li>
+                                            href="{{ url('lead-reports') }}">Fuel Usage</a></li>
                                     <li><a class="{{ Request::is('deal-reports') ? 'active' : '' }}"
-                                            href="{{ url('deal-reports') }}">Deal Reports</a></li>
+                                            href="{{ url('deal-reports') }}">Spare Part Usage</a></li>
                                     <li><a class="{{ Request::is('contact-reports') ? 'active' : '' }}"
-                                            href="{{ url('contact-reports') }}">Contact Reports</a></li>
+                                            href="{{ url('contact-reports') }}">Project Survey Results</a></li>
                                     <li><a class="{{ Request::is('company-reports') ? 'active' : '' }}"
-                                            href="{{ url('company-reports') }}">Company Reports</a></li>
+                                            href="{{ url('company-reports') }}">Project Budget Realization</a></li>
                                     <li><a class="{{ Request::is('project-reports') ? 'active' : '' }}"
-                                            href="{{ url('project-reports') }}">Project Reports</a></li>
+                                            href="{{ url('project-reports') }}">Project Realization</a></li>
                                     <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
-                                            href="{{ url('task-reports') }}">Task Reports</a></li>
+                                            href="{{ url('task-reports') }}">Accounts Receivable Aging</a></li>
+                                    <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
+                                            href="{{ url('task-reports') }}">Collection Performance</a></li>
+                                    <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
+                                            href="{{ url('task-reports') }}">Bad Debt Analysis</a></li>
+                                    <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
+                                            href="{{ url('task-reports') }}">Project Petty Cash Transaction</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -126,29 +161,6 @@
                         </ul>
                     </li>
                     <li class="menu-title"><span>Help</span></li>
-                    <li>
-                        <ul>
-                            <li><a href="https://crms.dreamstechnologies.com/documentation/laravel.html" target="_blank"><i class="ti ti-file-stack"></i><span>Documentation</span></a></li>
-                            <li><a href="https://crms.dreamstechnologies.com/documentation/changelog.html" target="_blank"><i class="ti ti-arrow-capsule"></i><span>Changelog v2.3.1</span></a></li>
-                            <li class="submenu">
-                                <a href="javascript:void(0);"><i class="ti ti-menu-deep"></i><span>Multi Level</span><span class="menu-arrow"></span></a>
-                                <ul>
-                                    <li><a href="javascript:void(0);">Level 1.1</a></li>
-                                    <li class="submenu submenu-two"><a href="javascript:void(0);">Level 1.2<span class="menu-arrow inside-submenu"></span></a>
-                                        <ul>
-                                            <li><a href="javascript:void(0);">Level 2.1</a></li>
-                                            <li class="submenu submenu-two submenu-three"><a href="javascript:void(0);">Level 2.2<span class="menu-arrow inside-submenu inside-submenu-two"></span></a>
-                                                <ul>
-                                                    <li><a href="javascript:void(0);">Level 3.1</a></li>
-                                                    <li><a href="javascript:void(0);">Level 3.2</a></li>
-                                                </ul>
-                                            </li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </li>
                 </ul>
             </div>
         </div>

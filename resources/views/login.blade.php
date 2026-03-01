@@ -25,7 +25,7 @@
                             <div>
                                 <div class="mb-3">
                                     <h3 class="mb-2">Sign In</h3>
-                                    <p class="mb-0">Access the CRMS panel using your email and passcode.</p>
+                                    <p class="mb-0">Access the Project panel using your email and passcode.</p>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Email Address</label>
@@ -51,46 +51,12 @@
                                         <div class="text-danger small mt-1">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                    <div class="form-check form-check-md d-flex align-items-center">
-                                        <input class="form-check-input mt-0" type="checkbox" name="remember" id="checkebox-md">
-                                        <label class="form-check-label text-dark ms-1" for="checkebox-md">
-                                            Remember Me
-                                        </label>
-                                    </div>
-                                    <div class="text-end">
-                                        <a href="{{url('forgot-password')}}" class="link-danger fw-medium link-hover">Forgot Password?</a>
-                                    </div>
-                                </div>
                                 <div class="mb-3">
                                     <button type="submit" class="btn btn-primary w-100">Sign In</button>
                                 </div>
-                                <div class="mb-3">
-                                    <p class="mb-0">New on our platform?<a href="{{url('register')}}" class="link-indigo fw-bold link-hover"> Create an account</a></p>
-                                </div>
-                                <div class="or-login text-center position-relative mb-3">
-                                    <h6 class="fs-14 mb-0 position-relative text-body">OR</h6>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 mb-3">
-                                    <div class="text-center flex-fill">
-                                        <a href="javascript:void(0);" class="p-2 btn btn-info d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid m-1" src="{{URL::asset('build/img/icons/facebook-logo.svg')}}" alt="Facebook">
-                                        </a>
-                                    </div>
-                                    <div class="text-center flex-fill">
-                                        <a href="javascript:void(0);" class="p-2 btn btn-outline-light d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid  m-1" src="{{URL::asset('build/img/icons/google-logo.svg')}}" alt="Facebook">
-                                        </a>
-                                    </div>
-                                    <div class="text-center flex-fill">
-                                        <a href="javascript:void(0);" class="p-2 btn btn-dark d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid  m-1" src="{{URL::asset('build/img/icons/apple-logo.svg')}}" alt="Apple">
-                                        </a>
-                                    </div>
-                                </div>
                             </div>
                             <div class="text-center pb-4">
-                                <p class="text-dark mb-0">Copyright &copy; <script>document.write(new Date().getFullYear())</script> - CRMS</p>
+                                <p class="text-dark mb-0">Copyright &copy; <script>document.write(new Date().getFullYear())</script> - SSB - Project Management System</p>
                             </div>
                         </form>
                     </div> <!-- end col -->

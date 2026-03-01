@@ -89,6 +89,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('unit-requests/{unitRequest}/forward', [\App\Http\Controllers\UnitRequestController::class, 'forwardToWorkshop'])->name('unit-requests.forward');
     Route::get('unit-requests/{unitRequest}/attachment', [\App\Http\Controllers\UnitRequestController::class, 'downloadAttachment'])->name('unit-requests.attachment');
 
+    // Final Contracts
+    Route::resource('final-contracts', \App\Http\Controllers\ContractController::class)->parameters(['final-contracts' => 'uid']);
+    Route::get('api/final-contracts/load-data', [\App\Http\Controllers\ContractController::class, 'loadData'])->name('final-contracts.load-data');
+
     // ... other protected routes
 });
 
