@@ -6,7 +6,7 @@
                 @csrf
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="ti ti-calculator me-2"></i>Submit Department Score
+                        <i class="ti ti-calculator me-2"></i>{{ isset($canSubmitScore) && $canSubmitScore ? 'Submit' : 'View' }} Department Score
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -51,7 +51,7 @@
                                                     }
                                                 @endphp
                                                 <div class="col-md-12">
-                                                    <div class="form-check border p-2 rounded option-card hover-bg-light" style="cursor: pointer;" onclick="document.getElementById('option{{ $option->id }}-{{ $dept_key ?? '' }}').click()">
+                                                    <div class="form-check border p-2 rounded option-card {{ isset($canSubmitScore) && $canSubmitScore ? 'hover-bg-light' : '' }}" {!! isset($canSubmitScore) && $canSubmitScore ? 'style="cursor: pointer;" onclick="document.getElementById(\'option'.$option->id.'-'.($dept_key ?? '').'\').click()"' : '' !!}>
                                                         <input class="form-check-input criteria-radio mt-1 ms-1" 
                                                             type="radio" 
                                                             name="criteria_scores[{{ $criteria->id }}]" 
@@ -60,8 +60,9 @@
                                                             data-points="{{ $option->score * $criteria->weighting }}"
                                                             data-maxpoints="{{ $maxCriteriaPoints }}"
                                                             {{ $isChecked ? 'checked' : '' }}
+                                                            {{ isset($canSubmitScore) && !$canSubmitScore ? 'disabled' : '' }}
                                                             required>
-                                                        <label class="form-check-label w-100 ms-2" for="option{{ $option->id }}-{{ $dept_key ?? '' }}" style="cursor: pointer;">
+                                                        <label class="form-check-label w-100 ms-2" for="option{{ $option->id }}-{{ $dept_key ?? '' }}" style="{{ isset($canSubmitScore) && $canSubmitScore ? 'cursor: pointer;' : '' }}">
                                                             <div class="d-flex justify-content-between">
                                                                 <strong class="text-dark">{{ $option->label }}</strong>
                                                                 <span class="badge bg-info">{{ $option->score }} pts</span>
@@ -101,15 +102,17 @@
                         <textarea name="notes" 
                                   class="form-control" 
                                   rows="4" 
-                                  required
+                                  {{ isset($canSubmitScore) && !$canSubmitScore ? 'readonly' : 'required' }}
                                   placeholder="Provide detailed justification for the score...">{{ isset($scoreRecord) && $scoreRecord ? $scoreRecord->notes : '' }}</textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    @if(isset($canSubmitScore) && $canSubmitScore)
                     <button type="submit" class="btn btn-success">
                         <i class="ti ti-check me-1"></i>Submit Score
                     </button>
+                    @endif
                 </div>
             </form>
         </div>

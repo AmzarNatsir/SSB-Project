@@ -73,12 +73,21 @@
                                         <i class="ti ti-plus me-1"></i>Submit
                                     </button>
                                 @elseif($score)
-                                    <button class="btn btn-sm btn-outline-info" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#scoreModal-{{ $dept }}"
-                                        data-dept="{{ $dept }}">
-                                        <i class="ti ti-edit me-1"></i> View / Edit
-                                    </button>
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        <button class="btn btn-sm {{ $canSubmitScore ? 'btn-outline-info' : 'btn-outline-secondary' }}" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#scoreModal-{{ $dept }}"
+                                            data-dept="{{ $dept }}">
+                                            @if($canSubmitScore)
+                                                <i class="ti ti-edit me-1"></i> Edit
+                                            @else
+                                                <i class="ti ti-eye me-1"></i> View
+                                            @endif
+                                        </button>
+                                        <a href="{{ route('project-survey.score-pdf', [$survey->uid, $dept]) }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Print PDF">
+                                            <i class="ti ti-file-type-pdf"></i>
+                                        </a>
+                                    </div>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
@@ -128,7 +137,12 @@
             @php 
                 $sRec = $survey->scores->where('department', $dept_key)->first();
             @endphp
-            @include('projects.survey.modals.score-modal', ['survey' => $survey, 'dept_key' => $dept_key, 'scoreRecord' => $sRec])
+            @include('projects.survey.modals.score-modal', [
+                'survey' => $survey, 
+                'dept_key' => $dept_key, 
+                'scoreRecord' => $sRec, 
+                'canSubmitScore' => $canSubmitScore
+            ])
         @endforeach
     </div>
 </div>

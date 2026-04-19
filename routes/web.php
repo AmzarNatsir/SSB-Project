@@ -29,6 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('project-survey/{uid}/start', [\App\Http\Controllers\ProjectSurveyController::class, 'startSurvey'])->name('project-survey.start');
     Route::post('project-survey/{uid}/schedule', [\App\Http\Controllers\ProjectSurveyController::class, 'updateSchedule'])->name('project-survey.schedule');
     Route::post('project-survey/{uid}/score', [\App\Http\Controllers\ProjectSurveyController::class, 'storeScore'])->name('project-survey.score');
+    Route::get('project-survey/{uid}/score/{department}/pdf', [\App\Http\Controllers\ProjectSurveyController::class, 'exportDepartmentScorePdf'])->name('project-survey.score-pdf');
     Route::post('project-survey/{uid}/status', [\App\Http\Controllers\ProjectSurveyController::class, 'updateStatus'])->name('project-survey.status');
     Route::post('project-survey/{uid}/approve-execution', [\App\Http\Controllers\ProjectSurveyController::class, 'approveSurveyExecution'])->name('project-survey.approve-execution');
     Route::post('project-survey/{uid}/reject-execution', [\App\Http\Controllers\ProjectSurveyController::class, 'rejectSurveyExecution'])->name('project-survey.reject-execution');

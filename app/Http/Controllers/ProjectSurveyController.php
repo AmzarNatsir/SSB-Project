@@ -237,6 +237,15 @@ class ProjectSurveyController extends Controller
         }
     }
 
+    public function exportDepartmentScorePdf($uid, $department)
+    {
+        $survey = \App\Models\ProjectSurvey::where('uid', $uid)->with('project')->firstOrFail();
+        $score = $survey->scores()->where('department', $department)->with('criteria')->firstOrFail();
+        
+        $pdf = \PDF::loadView('projects.survey.pdf.department-score', compact('survey', 'score', 'department'))->setPaper('a4', 'portrait');
+        return $pdf->stream('Assessment_' . $department . '_' . ($survey->project->project_code ?? 'Survey') . '.pdf');
+    }
+
     public function updateStatus(Request $request, $uid)
     {
         // Handling approvals
