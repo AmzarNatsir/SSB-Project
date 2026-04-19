@@ -93,6 +93,27 @@
                             </button>
                         </li>
                         @endif
+
+                        @if($project->contracts->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="contracts-tab" data-bs-toggle="tab" data-bs-target="#contracts" type="button" role="tab">
+                                <i class="ti ti-file-certificate me-1"></i> Final Contracts
+                            </button>
+                        </li>
+                        @endif
+                        
+                        @if($project->unitRequests->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="units-tab" data-bs-toggle="tab" data-bs-target="#units" type="button" role="tab">
+                                <i class="ti ti-truck me-1"></i> Units
+                            </button>
+                        </li>
+                        @endif
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="manpower-tab" data-bs-toggle="tab" data-bs-target="#manpower" type="button" role="tab">
+                                <i class="ti ti-users me-1"></i> Work Force
+                            </button>
+                        </li>
                     </ul>
 
                     <div class="tab-content" id="projectTabsContent">
@@ -745,6 +766,247 @@
                             </div>
                         </div>
                         @endif
+
+                        <!-- Final Contracts Tab -->
+                        @if($project->contracts->isNotEmpty())
+                        <div class="tab-pane fade" id="contracts" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-file-certificate me-2 text-primary"></i>Active Contracts
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            @foreach($project->contracts as $contract)
+                                            <div class="mb-5">
+                                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                                    <div>
+                                                        <h6 class="text-muted text-uppercase fw-semibold mb-1 small">Contract Number</h6>
+                                                        <h5 class="mb-0 text-primary">{{ $contract->contract_number }}</h5>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-xl-4 col-lg-5 mb-4 mb-lg-0">
+                                                        <div class="card h-100 border shadow-none mb-0">
+                                                            <div class="card-header bg-light-200 py-2">
+                                                                <h6 class="mb-0 fs-14">Contract Summary</h6>
+                                                            </div>
+                                                            <div class="card-body py-3">
+                                                                <div class="mb-3">
+                                                                    <label class="text-muted d-block small mb-1">Status</label>
+                                                                    <span class="badge bg-{{ $contract->status->color() }} fs-12">
+                                                                        {{ $contract->status->label() }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="row mb-3">
+                                                                    <div class="col-6">
+                                                                        <label class="text-muted d-block small mb-1">Effective Date</label>
+                                                                        <span class="fw-bold fs-13">{{ $contract->start_date ? $contract->start_date->format('d/m/Y') : '-' }}</span>
+                                                                    </div>
+                                                                    <div class="col-6">
+                                                                        <label class="text-muted d-block small mb-1">Expiration Date</label>
+                                                                        <span class="fw-bold fs-13 text-{{ $contract->end_date && $contract->end_date->isPast() ? 'danger' : 'success' }}">
+                                                                            {{ $contract->end_date ? $contract->end_date->format('d/m/Y') : '-' }}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="text-muted d-block small mb-1">Days Remaining</label>
+                                                                    @if($contract->end_date && $contract->end_date->isPast())
+                                                                        <span class="text-danger fs-13">EXPIRED</span>
+                                                                    @else
+                                                                        <span class="fw-bold fs-13">{{ $contract->end_date ? now()->diffInDays($contract->end_date) : '-' }} days</span>
+                                                                    @endif
+                                                                </div>
+                                                                <hr class="my-2">
+                                                                <div class="mb-2">
+                                                                    <label class="text-muted d-block small mb-1">Created By</label>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="flex-shrink-0">
+                                                                            <div class="avatar avatar-xs rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px;">
+                                                                                {{ $contract->creator ? strtoupper(substr($contract->creator->name, 0, 1)) : '?' }}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="flex-grow-1 ms-2">
+                                                                            <h6 class="mb-0 fs-13">{{ $contract->creator->name ?? 'Unknown' }}</h6>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @if($contract->approved_by)
+                                                                <div class="mb-0 mt-3">
+                                                                    <label class="text-muted d-block small mb-1">Approved By</label>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="flex-shrink-0">
+                                                                            <div class="avatar avatar-xs rounded-circle bg-success text-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px;">
+                                                                                {{ $contract->approver ? strtoupper(substr($contract->approver->name, 0, 1)) : '?' }}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="flex-grow-1 ms-2">
+                                                                            <h6 class="mb-0 fs-13">{{ $contract->approver->name ?? 'Unknown' }}</h6>
+                                                                            <span class="text-muted" style="font-size: 11px;">{{ $contract->approved_at ? $contract->approved_at->format('d M Y') : '' }}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                @endif
+
+                                                                @if($contract->attachment_path)
+                                                                <hr class="my-3">
+                                                                <div class="d-grid gap-2">
+                                                                    <a href="{{ Storage::url($contract->attachment_path) }}" target="_blank" class="btn btn-sm btn-outline-info d-flex align-items-center justify-content-center">
+                                                                        <i class="ti ti-download me-2"></i>Download Contract
+                                                                    </a>
+                                                                </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="col-xl-8 col-lg-7">
+                                                        <div class="card h-100 border shadow-none mb-0">
+                                                            <div class="card-header bg-light-200 py-2">
+                                                                <h6 class="mb-0 fs-14">Contract Items</h6>
+                                                            </div>
+                                                            <div class="card-body p-0">
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-hover border-top-0 table-sm mb-0">
+                                                                        <thead class="bg-light-500">
+                                                                            <tr>
+                                                                                <th class="border-0">Item Description</th>
+                                                                                <th class="text-center border-0">Qty</th>
+                                                                                <th class="text-center border-0">Unit Price</th>
+                                                                                <th class="text-end border-0">Total Price</th>
+                                                                                <th class="text-center border-0">Duration</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody class="border-0">
+                                                                            @php $totalagreed = 0; @endphp
+                                                                            @foreach($contract->items as $item)
+                                                                            @php 
+                                                                                $itemTotal = $item->total_price ?? ($item->qty * $item->unit_price);
+                                                                                $totalagreed += $itemTotal; 
+                                                                            @endphp
+                                                                            <tr>
+                                                                                <td class="fw-medium text-dark">{{ $item->unit_name ?? $item->description ?? '-' }}</td>
+                                                                                <td class="text-center">{{ $item->qty }}</td>
+                                                                                <td class="text-center">Rp {{ number_format($item->unit_price, 0, ',', '.') }}</td>
+                                                                                <td class="text-end fw-bold text-primary">Rp {{ number_format($itemTotal, 0, ',', '.') }}</td>
+                                                                                <td class="text-center">{{ $item->duration }} Month</td>
+                                                                            </tr>
+                                                                            @endforeach
+                                                                        </tbody>
+                                                                        <tfoot class="fw-bold bg-light">
+                                                                            <tr>
+                                                                                <td colspan="3" class="text-end py-2">Total Agreed Value:</td>
+                                                                                <td class="text-end text-primary py-2">Rp {{ number_format($totalagreed, 0, ',', '.') }}</td>
+                                                                                <td></td>
+                                                                            </tr>
+                                                                        </tfoot>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @if(!$loop->last)
+                                                <hr class="border-light opacity-50 mb-4">
+                                            @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Units Tab -->
+                        @if($project->unitRequests->isNotEmpty())
+                        <div class="tab-pane fade" id="units" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-truck me-2 text-primary"></i>Deployed Units
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            @foreach($project->unitRequests as $unitRequest)
+                                            <div class="mb-4">
+                                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                                    <div>
+                                                        <h6 class="text-muted text-uppercase fw-semibold mb-1 small">Request Number</h6>
+                                                        <h5 class="mb-0 text-primary">{{ $unitRequest->request_number }}</h5>
+                                                    </div>
+                                                    <a href="{{ route('unit-requests.show', $unitRequest->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="ti ti-external-link me-1"></i> View Request
+                                                    </a>
+                                                </div>
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover border-top-0 table-sm">
+                                                        <thead class="bg-light-500">
+                                                            <tr>
+                                                                <th class="border-0">Unit Name</th>
+                                                                <th class="text-center border-0">Qty</th>
+                                                                <th class="text-center border-0">Duration (Days)</th>
+                                                                <th class="text-center border-0">Unit Ready</th>
+                                                                <th class="border-0">Operator Name</th>
+                                                                <th class="border-0">Remarks</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="border-0">
+                                                            @foreach($unitRequest->items as $item)
+                                                            <tr>
+                                                                <td class="fw-medium text-dark">{{ $item->unit_name }}</td>
+                                                                <td class="text-center">{{ $item->qty }}</td>
+                                                                <td class="text-center">{{ $item->duration_days }}</td>
+                                                                <td class="text-center">
+                                                                    @if($item->unit_ready)
+                                                                        <span class="badge bg-success-transparent text-success border border-success-subtle px-2 py-1">Ready</span>
+                                                                    @else
+                                                                        <span class="badge bg-warning-transparent text-warning border border-warning-subtle px-2 py-1">Not Ready</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>{{ $item->operator_name ?? '-' }}</td>
+                                                                <td class="text-muted small">{{ $item->remarks ?? '-' }}</td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            @if(!$loop->last)
+                                                <hr class="border-light opacity-50 mb-4">
+                                            @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
+                        <!-- Manpower Tab -->
+                        <div class="tab-pane fade" id="manpower" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-users me-2 text-primary"></i>Work Force
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            List Work Force in project
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
             </div>

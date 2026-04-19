@@ -72,11 +72,14 @@ class SurveyDetailManager {
     }
 
     validateScoreForm() {
-        const scoreInput = document.getElementById('scoreInput');
         const notesInput = document.querySelector('#scoreForm [name="notes"]');
+        const checkedRadios = document.querySelectorAll('.criteria-radio:checked');
+        const allCriteriaGroups = new Set();
+        
+        document.querySelectorAll('.criteria-radio').forEach(r => allCriteriaGroups.add(r.name));
 
-        if (!scoreInput.value || scoreInput.value < 0 || scoreInput.value > 100) {
-            this.showError('Score must be between 0 and 100');
+        if (checkedRadios.length < allCriteriaGroups.size) {
+            this.showError('Please select a score for all criteria items.');
             return false;
         }
 

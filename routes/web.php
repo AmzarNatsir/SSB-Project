@@ -22,6 +22,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('project-sub-category', ProjectSubCategoryController::class);
     Route::resource('equipment-rental-rates-hm', \App\Http\Controllers\EquipmentRentalRatesHMController::class);
     Route::resource('scoring', ScoringController::class);
+    Route::get('scoring-plan-project/full-view', [\App\Http\Controllers\ScoringPlanProjectController::class, 'fullView'])->name('scoring-plan-project.full-view');
+    Route::get('scoring-plan-project/export-pdf', [\App\Http\Controllers\ScoringPlanProjectController::class, 'exportPdf'])->name('scoring-plan-project.export-pdf');
+    Route::resource('scoring-plan-project', \App\Http\Controllers\ScoringPlanProjectController::class);
     Route::resource('project-survey', \App\Http\Controllers\ProjectSurveyController::class);
     Route::post('project-survey/{uid}/start', [\App\Http\Controllers\ProjectSurveyController::class, 'startSurvey'])->name('project-survey.start');
     Route::post('project-survey/{uid}/schedule', [\App\Http\Controllers\ProjectSurveyController::class, 'updateSchedule'])->name('project-survey.schedule');
@@ -92,6 +95,20 @@ Route::middleware(['auth'])->group(function () {
     // Final Contracts
     Route::resource('final-contracts', \App\Http\Controllers\ContractController::class)->parameters(['final-contracts' => 'uid']);
     Route::get('api/final-contracts/load-data', [\App\Http\Controllers\ContractController::class, 'loadData'])->name('final-contracts.load-data');
+
+    // Unit Replacements (PTU)
+    Route::resource('unit-replacements', \App\Http\Controllers\ProjectUnitReplacementController::class)->parameters(['unit-replacements' => 'unitReplacement']);
+    Route::post('unit-replacements/{unitReplacement}/submit', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'submit'])->name('unit-replacements.submit');
+    Route::post('unit-replacements/{unitReplacement}/approve', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'approve'])->name('unit-replacements.approve');
+    Route::post('unit-replacements/{unitReplacement}/complete', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'complete'])->name('unit-replacements.complete');
+    Route::get('unit-replacements/{unitReplacement}/attachment', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'downloadAttachment'])->name('unit-replacements.attachment');
+
+    // Unit Returns (PPU)
+    Route::resource('unit-returns', \App\Http\Controllers\ProjectUnitReturnController::class)->parameters(['unit-returns' => 'unitReturn']);
+    Route::post('unit-returns/{unitReturn}/submit', [\App\Http\Controllers\ProjectUnitReturnController::class, 'submit'])->name('unit-returns.submit');
+    Route::post('unit-returns/{unitReturn}/approve', [\App\Http\Controllers\ProjectUnitReturnController::class, 'approve'])->name('unit-returns.approve');
+    Route::post('unit-returns/{unitReturn}/complete', [\App\Http\Controllers\ProjectUnitReturnController::class, 'complete'])->name('unit-returns.complete');
+    Route::get('unit-returns/{unitReturn}/attachment', [\App\Http\Controllers\ProjectUnitReturnController::class, 'downloadAttachment'])->name('unit-returns.attachment');
 
     // ... other protected routes
 });

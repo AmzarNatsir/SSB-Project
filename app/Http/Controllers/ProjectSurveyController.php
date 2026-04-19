@@ -108,8 +108,9 @@ class ProjectSurveyController extends Controller
         if (!$survey) abort(404);
         
         $users = \App\Models\User::orderBy('name')->get();
+        $scoringCriteria = \App\Models\ScoringCriteria::with('options')->get();
         
-        return view('projects.survey.show', compact('survey', 'users'));
+        return view('projects.survey.show', compact('survey', 'users', 'scoringCriteria'));
     }
 
     public function updateSchedule(Request $request, $uid)
@@ -194,8 +195,8 @@ class ProjectSurveyController extends Controller
         
         $request->validate([
             'department' => 'required|in:PROJECT,WORKSHOP,HSE',
-            'score' => 'required|numeric|min:0|max:100',
-            'criteria_scores' => 'nullable|array',
+            'criteria_scores' => 'required|array',
+            'criteria_scores.*' => 'required|exists:scoring_options,id',
             'notes' => 'nullable|string'
         ]);
 

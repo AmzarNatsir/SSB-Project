@@ -94,7 +94,6 @@
 
     <!-- Modals -->
     @include('projects.survey.modals.schedule-modal', ['survey' => $survey])
-    @include('projects.survey.modals.score-modal', ['survey' => $survey])
     @include('projects.survey.modals.approval-modal', ['survey' => $survey])
     @include('projects.survey.modals.document-upload-modal', ['survey' => $survey])
 

@@ -76,21 +76,70 @@ class SurveyApplicationService
                 throw new \DomainException('Cannot submit score at this time');
             }
             
-            \Log::info('Workflow check passed, creating score record');
+            \Log::info('Workflow check passed, calculating detailed score');
+            
+            // Use application's master data instead of static frontend score
+            $criteriaList = \App\Models\ScoringCriteria::with('options')->get();
+            $totalEarnedPoints = 0;
+            $totalMaxPoints = 0;
+            $detailedScores = [];
+            
+            foreach ($criteriaList as $criteria) {
+                // Determine max score for this criteria
+                $maxOptionScore = $criteria->options->max('score') ?? 0;
+                $maxCriteriaPoints = $maxOptionScore * $criteria->weighting;
+                $totalMaxPoints += $maxCriteriaPoints;
+                
+                // Determine selected score
+                $selectedOptionId = $dto->criteriaScores[$criteria->id] ?? null;
+                $earnedPoints = 0;
+                $optionTitle = 'N/A';
+                $optionScore = 0;
+                
+                if ($selectedOptionId) {
+                    $selectedOption = $criteria->options->firstWhere('id', $selectedOptionId);
+                    if ($selectedOption) {
+                        $optionScore = $selectedOption->score;
+                        $earnedPoints = $optionScore * $criteria->weighting;
+                        $optionTitle = $selectedOption->label;
+                    }
+                }
+                
+                $totalEarnedPoints += $earnedPoints;
+                
+                $detailedScores[] = [
+                    'criterion_name' => $criteria->name,
+                    'score' => $earnedPoints,
+                    'max_score' => $maxCriteriaPoints,
+                    'justification' => $optionTitle . ' (' . $optionScore . ' pts)'
+                ];
+            }
+            
+            // Calculate final percentage 0-100
+            $finalPercentageScore = ($totalMaxPoints > 0) ? ($totalEarnedPoints / $totalMaxPoints) * 100 : 0;
+            $finalPercentageScore = round($finalPercentageScore, 1);
             
             $weight = $this->scoringEngine->getWeight($dto->department);
-            $weightedScore = $dto->score * $weight;
+            $weightedScore = $finalPercentageScore * $weight;
             
-            // Create score record - using correct field names from migration
-            $score = $survey->scores()->create([
-                'department' => $dto->department,
-                'score' => $dto->score,  // Changed from raw_score
-                'weight' => $weight * 100,  // Changed from weight_percentage
-                'weighted_score' => $weightedScore,
-                'notes' => $dto->notes,
-            ]);
+            // Create or update score record
+            $score = $survey->scores()->updateOrCreate(
+                ['department' => $dto->department],
+                [
+                    'score' => $finalPercentageScore,
+                    'weight' => $weight * 100,
+                    'weighted_score' => $weightedScore,
+                    'notes' => $dto->notes,
+                ]
+            );
             
-            \Log::info('Score record created', [
+            // Delete existing detailed criteria records if any, then insert new
+            $score->criteria()->delete();
+            foreach ($detailedScores as $detail) {
+                $score->criteria()->create($detail);
+            }
+            
+            \Log::info('Score record created or updated', [
                 'score_id' => $score->id,
                 'department' => $score->department,
                 'score' => $score->score,

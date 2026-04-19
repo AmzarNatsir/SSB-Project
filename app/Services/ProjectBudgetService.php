@@ -203,6 +203,7 @@ class ProjectBudgetService
             
             // Clone Budget
             $newBudget = $originalBudget->replicate();
+            $newBudget->uid = null; // Reset uid so boot hook generates a new UUID
             $newBudget->version = $originalBudget->version + 1;
             $newBudget->status = BudgetStatus::DRAFT; // Or REVISION_REQUIRED?
             $newBudget->baseline_locked_at = null;

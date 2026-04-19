@@ -31,4 +31,9 @@ class ProjectSurveyScore extends Model
     {
         return $this->belongsTo(ProjectSurvey::class, 'survey_id');
     }
+
+    public function criteria()
+    {
+        return $this->hasMany(SurveyScoreCriterion::class, 'survey_score_id');
+    }
 }

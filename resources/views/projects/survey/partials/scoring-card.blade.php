@@ -1,6 +1,7 @@
 @php
     $departments = ['PROJECT' => 40, 'WORKSHOP' => 30, 'HSE' => 30];
     $canSubmitScore = in_array($survey->status, ['IN_PROGRESS', 'SCORING']);
+    $runningTotal = 0;
 @endphp
 
 <div class="card mb-3">
@@ -26,6 +27,9 @@
                     @foreach($departments as $dept => $weight)
                         @php 
                             $score = $survey->scores->where('department', $dept)->first();
+                            if ($score) {
+                                $runningTotal += $score->weighted_score;
+                            }
                         @endphp
                         <tr>
                             <td>
@@ -64,14 +68,16 @@
                                 @if($canSubmitScore && !$score)
                                     <button class="btn btn-sm btn-outline-primary" 
                                         data-bs-toggle="modal" 
-                                        data-bs-target="#scoreModal"
+                                        data-bs-target="#scoreModal-{{ $dept }}"
                                         data-dept="{{ $dept }}">
                                         <i class="ti ti-plus me-1"></i>Submit
                                     </button>
                                 @elseif($score)
                                     <button class="btn btn-sm btn-outline-info" 
-                                        onclick="viewScoreDetails('{{ $score->id }}')">
-                                        <i class="ti ti-eye"></i>
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#scoreModal-{{ $dept }}"
+                                        data-dept="{{ $dept }}">
+                                        <i class="ti ti-edit me-1"></i> View / Edit
                                     </button>
                                 @else
                                     <span class="text-muted">-</span>
@@ -89,7 +95,11 @@
                                     </span>
                                 </h5>
                             @else
-                                <span class="text-muted">Not calculated yet</span>
+                                <h5 class="mb-0">
+                                    <span class="badge bg-secondary">
+                                        {{ number_format($runningTotal, 2) }} (Running Total)
+                                    </span>
+                                </h5>
                             @endif
                         </td>
                     </tr>
@@ -112,5 +122,13 @@
                 <small class="text-muted">Feasibility Threshold: 70%</small>
             </div>
         @endif
+        
+        <!-- Preload modals for each department -->
+        @foreach($departments as $dept_key => $w)
+            @php 
+                $sRec = $survey->scores->where('department', $dept_key)->first();
+            @endphp
+            @include('projects.survey.modals.score-modal', ['survey' => $survey, 'dept_key' => $dept_key, 'scoreRecord' => $sRec])
+        @endforeach
     </div>
 </div>

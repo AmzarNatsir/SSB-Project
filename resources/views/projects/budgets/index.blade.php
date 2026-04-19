@@ -9,7 +9,7 @@
             <!-- Page Header -->
             <div class="d-md-flex d-block align-items-center justify-content-between mb-3">
                 <div class="my-auto mb-2">
-                    <h3 class="page-title mb-1">Project Budgets</h3>
+                    <h3 class="page-title mb-1">Project Budgets (Anggaran Proyek)</h3>
                     <nav>
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item">
@@ -64,45 +64,45 @@
     <!-- /Page Wrapper -->
 
     @push('scripts')
-    <script>
-        $(document).ready(function() {
-            // Initialize DataTable
-            var table = $('.ajax-datatable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: "{{ route('budgets.index') }}",
-                columns: [
-                    {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
-                    {data: 'project_name', name: 'project.project_name'},
-                    {data: 'version', name: 'version'},
-                    {data: 'status', name: 'status'},
-                    {data: 'total_hpp', name: 'total_hpp'},
-                    {data: 'selling_price', name: 'selling_price'},
-                    {data: 'profit_margin_percent', name: 'profit_margin_percent'},
-                    {data: 'created_by_name', name: 'creator.name'},
-                    {data: 'action', name: 'action', orderable: false, searchable: false},
-                ],
-                order: [[2, 'desc']] // Sort by version desc by default? Or created_at using hidden column
-            });
+        <script>
+            $(document).ready(function () {
+                // Initialize DataTable
+                var table = $('.ajax-datatable').DataTable({
+                    processing: true,
+                    serverSide: true,
+                    ajax: "{{ route('budgets.index') }}",
+                    columns: [
+                        { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                        { data: 'project_name', name: 'project.project_name' },
+                        { data: 'version', name: 'version' },
+                        { data: 'status', name: 'status' },
+                        { data: 'total_hpp', name: 'total_hpp' },
+                        { data: 'selling_price', name: 'selling_price' },
+                        { data: 'profit_margin_percent', name: 'profit_margin_percent' },
+                        { data: 'created_by_name', name: 'creator.name' },
+                        { data: 'action', name: 'action', orderable: false, searchable: false },
+                    ],
+                    order: [[2, 'desc']] // Sort by version desc by default? Or created_at using hidden column
+                });
 
-            // Toast Configuration
-            const Toast = Swal.mixin({
-                toast: true,
-                position: 'top-end',
-                showConfirmButton: false,
-                timer: 3000,
-                timerProgressBar: true,
-            });
+                // Toast Configuration
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                });
 
-            @if(session('success'))
-                Toast.fire({icon: 'success', title: "{{ session('success') }}"});
-            @endif
+                @if(session('success'))
+                    Toast.fire({ icon: 'success', title: "{{ session('success') }}" });
+                @endif
 
-            @if(session('error'))
-                Toast.fire({icon: 'error', title: "{{ session('error') }}"});
-            @endif
-        });
-    </script>
+                @if(session('error'))
+                    Toast.fire({ icon: 'error', title: "{{ session('error') }}" });
+                @endif
+                                        });
+        </script>
     @endpush
 
 @endsection

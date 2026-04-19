@@ -21,13 +21,14 @@ class RolePermissionSeeder extends Seeder
 
         // Create Permissions
         $permissions = [
+            'view dashboard',
             'view_projects', 'create_projects', 'edit_projects', 'delete_projects',
             'view_budgets', 'create_budgets', 'edit_budgets', 'approve_budgets',
-            'manage_users', 'manage_roles', 'manage_settings'
+            'manage users', 'manage_users', 'manage_roles', 'manage_settings',
         ];
 
         foreach ($permissions as $permission) {
-            Permission::create(['name' => $permission]);
+            Permission::firstOrCreate(['name' => $permission]);
         }
 
         // Create Roles and assign created permissions
@@ -48,7 +49,7 @@ class RolePermissionSeeder extends Seeder
         // Create Default Super Admin User
         $user = User::factory()->create([
             'name' => 'Super Admin',
-            'email' => 'admin@example.com',
+            'email' => 'admin@mail.com',
             'password' => Hash::make('password'),
         ]);
         $user->assignRole($roleSuperAdmin);

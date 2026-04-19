@@ -113,7 +113,13 @@ class ProjectController extends Controller
         $project = Project::with([
                 'category', 'subCategory', 'pic', 'equipmentRentalRate', 'images', 
                 'surveys', 'latest_budget.items', 'latest_quotation.items', 
-                'latest_negotiation.rounds'
+                'latest_negotiation.rounds',
+                'contracts' => function ($query) {
+                    $query->where('status', \App\Enums\ContractStatus::ACTIVE)->with('items');
+                },
+                'unitRequests' => function ($query) {
+                    $query->where('status', \App\Enums\UnitRequestStatus::FORWARDED_TO_WORKSHOP)->with('items');
+                }
             ])
             ->where('uid', $id)
             ->firstOrFail();

@@ -31,48 +31,48 @@ class ProjectBudgetController extends Controller
         if ($request->ajax()) {
             $filters = $request->only(['status', 'project_id']);
             $query = $this->budgetRepo->getQuery($filters);
-            
+
             return DataTables::of($query)
                 ->addIndexColumn()
-                ->editColumn('total_hpp', function($row){
+                ->editColumn('total_hpp', function ($row) {
                     return 'Rp ' . number_format($row->total_hpp, 0, ',', '.');
                 })
-                ->editColumn('selling_price', function($row){
+                ->editColumn('selling_price', function ($row) {
                     return 'Rp ' . number_format($row->selling_price, 0, ',', '.');
                 })
-                ->editColumn('profit_margin_percent', function($row){
+                ->editColumn('profit_margin_percent', function ($row) {
                     return $row->profit_margin_percent . '%';
                 })
-                ->addColumn('project_name', function($row){
+                ->addColumn('project_name', function ($row) {
                     return $row->project->project_name ?? '-';
                 })
-                ->addColumn('created_by_name', function($row){
+                ->addColumn('created_by_name', function ($row) {
                     return $row->creator->name ?? '-';
                 })
-                ->editColumn('status', function($row){
+                ->editColumn('status', function ($row) {
                     $status = $row->status;
                     // Ensure status is an Enum
                     if (is_string($status)) {
                         $status = \App\Enums\BudgetStatus::tryFrom($status) ?? \App\Enums\BudgetStatus::DRAFT;
                     }
-                    
-                    return '<span class="badge bg-'.$status->color().'">'.$status->label().'</span>';
+
+                    return '<span class="badge bg-' . $status->color() . '">' . $status->label() . '</span>';
                 })
-                ->addColumn('action', function($row){
+                ->addColumn('action', function ($row) {
                     $btn = '<div class="d-flex gap-1">';
-                    $btn .= '<a href="'.route('budgets.show', $row->uid).'" class="btn btn-sm btn-info text-white"><i class="ti ti-eye"></i></a>';
-                    
+                    $btn .= '<a href="' . route('budgets.show', $row->uid) . '" class="btn btn-sm btn-info text-white"><i class="ti ti-eye"></i></a>';
+
                     if (!$row->isLocked()) {
-                        $btn .= '<a href="'.route('budgets.edit', $row->uid).'" class="btn btn-sm btn-warning text-white"><i class="ti ti-edit"></i></a>';
+                        $btn .= '<a href="' . route('budgets.edit', $row->uid) . '" class="btn btn-sm btn-warning text-white"><i class="ti ti-edit"></i></a>';
                     }
-                    
+
                     $btn .= '</div>';
                     return $btn;
                 })
                 ->rawColumns(['status', 'action'])
                 ->make(true);
         }
-        
+
         return view('projects.budgets.index');
     }
 
@@ -84,15 +84,16 @@ class ProjectBudgetController extends Controller
         if ($projectId) {
             $project = \App\Models\Project::find($projectId);
         }
-        
+
         return view('projects.budgets.create', compact('project'));
     }
 
     public function edit($uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) abort(404);
-        
+        if (!$budget)
+            abort(404);
+
         if ($budget->isLocked()) {
             return redirect()->route('budgets.show', $uid)->with('error', 'Budget is locked and cannot be edited.');
         }
@@ -103,8 +104,9 @@ class ProjectBudgetController extends Controller
     public function show($uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) abort(404);
-        
+        if (!$budget)
+            abort(404);
+
         return view('projects.budgets.show', compact('budget'));
     }
 
@@ -113,34 +115,36 @@ class ProjectBudgetController extends Controller
         // Check project survey status BEFORE creating
         // Assuming project repository exists or check logic here
         // For now, delegate to service or assume request validation handled "exists:projects"
-        
+
         $budget = $this->budgetService->createBudget(
             $request->except('items'),
             $request->input('items', [])
         );
-        
+
         return response()->json(['data' => $budget, 'message' => 'Budget created successfully'], 201);
     }
 
     public function update(UpdateBudgetRequest $request, $uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) return response()->json(['message' => 'Not found'], 404);
+        if (!$budget)
+            return response()->json(['message' => 'Not found'], 404);
 
         $budget = $this->budgetService->updateBudget(
             $budget->id,
             $request->except('items', 'version'),
             $request->input('items', [])
         );
-        
+
         return response()->json(['data' => $budget, 'message' => 'Budget updated successfully']);
     }
 
     public function destroy($uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) return response()->json(['message' => 'Not found'], 404);
-        
+        if (!$budget)
+            return response()->json(['message' => 'Not found'], 404);
+
         $budget->delete();
         return response()->json(['message' => 'Budget deleted successfully']);
     }
@@ -150,18 +154,18 @@ class ProjectBudgetController extends Controller
         try {
             // Include trashed in case we are trying to re-delete or something went wrong
             $item = \App\Models\ProjectBudgetItem::find($itemId);
-            
+
             if (!$item) {
                 return response()->json(['message' => 'Item not found'], 404);
             }
-            
+
             if ($item->budget->isLocked()) {
                 return response()->json(['message' => 'Cannot delete item from locked budget'], 403);
             }
 
             $budgetId = $item->project_budget_id;
             $item->delete();
-            
+
             // Recalculate budget totals after item deletion
             // This ensures the selling price and COGS are updated in DB
             $budget = \App\Models\ProjectBudget::find($budgetId);
@@ -178,7 +182,8 @@ class ProjectBudgetController extends Controller
     public function submit(SubmitBudgetRequest $request, $uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) return response()->json(['message' => 'Not found'], 404);
+        if (!$budget)
+            return response()->json(['message' => 'Not found'], 404);
 
         $budget = $this->budgetService->submitBudget($budget->id);
         return response()->json(['data' => $budget, 'message' => 'Budget submitted for approval']);
@@ -187,7 +192,8 @@ class ProjectBudgetController extends Controller
     public function approve(ApproveBudgetRequest $request, $uid)
     {
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) return response()->json(['message' => 'Not found'], 404);
+        if (!$budget)
+            return response()->json(['message' => 'Not found'], 404);
 
         $budget = $this->budgetService->processApproval(
             $budget->id,
@@ -195,28 +201,29 @@ class ProjectBudgetController extends Controller
             $request->input('decision'),
             $request->input('notes')
         );
-        
+
         return response()->json(['data' => $budget, 'message' => 'Approval decision recorded']);
     }
-    
+
     public function revise(Request $request, $uid)
     {
         $request->validate([
             'reasons' => 'required|string|min:10'
         ]);
-        
+
         $budget = $this->budgetRepo->getByUid($uid);
-        if (!$budget) return response()->json(['message' => 'Not found'], 404);
+        if (!$budget)
+            return response()->json(['message' => 'Not found'], 404);
 
         $newBudget = $this->budgetService->createRevision(
             $budget->id,
             $request->input('reasons'),
             auth()->id()
         );
-        
+
         return response()->json(['data' => $newBudget, 'message' => 'New revision created']);
     }
-    
+
     public function history($projectId)
     {
         $history = $this->budgetRepo->getHistory($projectId);

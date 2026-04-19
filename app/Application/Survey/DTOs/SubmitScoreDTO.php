@@ -9,9 +9,9 @@ class SubmitScoreDTO
     public function __construct(
         public readonly int $userId,
         public readonly string $department,
-        public readonly float $score,
         public readonly array $criteriaScores = [],
-        public readonly ?string $notes = null
+        public readonly ?string $notes = null,
+        public readonly float $score = 0.0
     ) {}
     
     public static function fromRequest(Request $request): self
@@ -19,9 +19,9 @@ class SubmitScoreDTO
         return new self(
             userId: $request->user()->id,
             department: $request->input('department'),
-            score: (float) $request->input('score'),
             criteriaScores: $request->input('criteria_scores', []),
-            notes: $request->input('notes')
+            notes: $request->input('notes'),
+            score: 0.0 // This will be calculated in the application service
         );
     }
 }
