@@ -67,6 +67,19 @@ class QuotationController extends Controller
         return view('quotations.create', compact('projects'));
     }
 
+    public function edit(Quotation $quotation)
+    {
+        if ($quotation->isLocked()) {
+            return redirect()->route('quotations.show', $quotation->uid)->with('error', 'Quotation is locked and cannot be edited.');
+        }
+
+        $projects = Project::whereHas('latest_budget', function($q) {
+            $q->where('status', \App\Enums\BudgetStatus::BASELINE_APPROVED);
+        })->get();
+
+        return view('quotations.create', compact('projects', 'quotation'));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -77,6 +90,7 @@ class QuotationController extends Controller
             'items.*.rate' => 'required|numeric',
             'items.*.quantity' => 'required|numeric',
             'items.*.duration' => 'required|numeric',
+            'profit_margin_percent' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $quotation = $this->service->create($validated);
@@ -148,6 +162,10 @@ class QuotationController extends Controller
     
     public function update(Request $request, Quotation $quotation)
     {
+        $validated = $request->validate([
+            'profit_margin_percent' => 'nullable|numeric|min:0|max:100',
+        ]);
+
         // Flexible update for Wizard steps
         $data = $request->all();
         $this->service->update($quotation, $data);

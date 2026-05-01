@@ -103,4 +103,26 @@ class ContractService
             'items' => $negotiation->quotation->items,
         ];
     }
+    /**
+     * Update an existing contract
+     */
+    public function updateContract(Contract $contract, array $data): Contract
+    {
+        return DB::transaction(function () use ($contract, $data) {
+            // Handle file upload
+            if (isset($data['attachment']) && $data['attachment']->isValid()) {
+                // Delete old file if exists
+                if ($contract->attachment_path) {
+                    Storage::disk('public')->delete($contract->attachment_path);
+                }
+                $contract->attachment_path = $data['attachment']->store('contracts', 'public');
+            }
+
+            $contract->start_date = $data['start_date'];
+            $contract->end_date = $data['end_date'];
+            $contract->save();
+
+            return $contract;
+        });
+    }
 }

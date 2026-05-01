@@ -130,6 +130,7 @@ class SurveyApplicationService
                     'weight' => $weight * 100,
                     'weighted_score' => $weightedScore,
                     'notes' => $dto->notes,
+                    'created_by' => $dto->userId,
                 ]
             );
             

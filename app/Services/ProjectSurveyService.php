@@ -61,16 +61,34 @@ class ProjectSurveyService
 
         $this->repository->update($survey, [
             'scheduled_at' => $data['scheduled_at'],
+            'notes' => $data['notes'] ?? null,
             'status' => self::STATUS_SURVEY_PLANNED
         ]);
 
         // Handle team assignment if provided
         if (isset($data['teams']) && is_array($data['teams']) && count($data['teams']) > 0) {
-            // Transform user IDs to team data format
-            $teamData = collect($data['teams'])->map(function($userId) {
+            // Fetch flow settings to resolve departments
+            $flowSettings = \App\Models\SurveyorFlow::with('role.users')->get();
+            
+            // Build a map of user_id => department
+            $userDeptMap = [];
+            foreach ($flowSettings as $flow) {
+                if ($flow->surveyor_type->value === 'USER' && $flow->user_id) {
+                    // Assign user to dept. If user exists in multiple depts, the last one wins (or we could store an array)
+                    // But usually, one surveyor covers one specific functional area in this setup.
+                    $userDeptMap[$flow->user_id] = $flow->department;
+                } elseif ($flow->surveyor_type->value === 'ROLE' && $flow->role) {
+                    foreach ($flow->role->users as $u) {
+                        $userDeptMap[$u->id] = $flow->department;
+                    }
+                }
+            }
+
+            // Transform user IDs to team data format using the map
+            $teamData = collect($data['teams'])->map(function($userId) use ($userDeptMap) {
                 return [
                     'user_id' => $userId,
-                    'department' => 'SURVEY_TEAM' // Default department for survey team
+                    'department' => $userDeptMap[$userId] ?? 'SURVEY_TEAM'
                 ];
             })->toArray();
             

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\ProjectSurveyService;
+use App\Services\SurveySummaryExcelService;
 use App\Application\Survey\Services\SurveyApplicationService;
 use App\Application\Survey\DTOs\CreateSurveyDTO;
 use App\Application\Survey\DTOs\SubmitScoreDTO;
@@ -109,8 +110,46 @@ class ProjectSurveyController extends Controller
         
         $users = \App\Models\User::orderBy('name')->get();
         $scoringCriteria = \App\Models\ScoringCriteria::with('options')->get();
+
+        // Fetch suggested surveyors from settings
+        $flowSettings = \App\Models\SurveyorFlow::with(['user', 'role.users'])->get();
+        $suggestedSurveyorIds = [];
+        $deptPermissions = [];
+        $deptSurveyors = [];
         
-        return view('projects.survey.show', compact('survey', 'users', 'scoringCriteria'));
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser->hasRole('Super Admin'); // Adjust role name as needed
+
+        foreach ($flowSettings as $flow) {
+            $isAllowed = false;
+            
+            // Set assigned surveyor name (from matrix)
+            $deptSurveyors[$flow->department] = $flow->surveyor_name;
+
+            // Collect suggested IDs for modal pre-selection
+            if ($flow->surveyor_type->value === 'USER' && $flow->user_id) {
+                $suggestedSurveyorIds[] = $flow->user_id;
+                if ($currentUser->id == $flow->user_id) $isAllowed = true;
+            } elseif ($flow->surveyor_type->value === 'ROLE' && $flow->role) {
+                $roleUsers = $flow->role->users->pluck('id')->toArray();
+                $suggestedSurveyorIds = array_merge($suggestedSurveyorIds, $roleUsers);
+                if ($currentUser->hasRole($flow->role->name)) $isAllowed = true;
+            }
+
+            // Grant permission if specifically mapped OR if Super Admin
+            $deptPermissions[$flow->department] = $isAllowed || $isSuperAdmin;
+        }
+        
+        $suggestedSurveyorIds = array_unique($suggestedSurveyorIds);
+        
+        return view('projects.survey.show', compact(
+            'survey', 
+            'users', 
+            'scoringCriteria', 
+            'suggestedSurveyorIds',
+            'deptPermissions',
+            'deptSurveyors'
+        ));
     }
 
     public function updateSchedule(Request $request, $uid)
@@ -194,13 +233,34 @@ class ProjectSurveyController extends Controller
         ]);
         
         $request->validate([
-            'department' => 'required|in:PROJECT,WORKSHOP,HSE',
+            'department' => 'required|in:PROJECT,WORKSHOP,HSE,FINANCE,HRD',
             'criteria_scores' => 'required|array',
             'criteria_scores.*' => 'required|exists:scoring_options,id',
             'notes' => 'nullable|string'
         ]);
 
         try {
+            // AUTHORIZATION CHECK based on Surveyor Flow
+            $isSuperAdmin = auth()->user()->hasRole('Super Admin');
+            if (!$isSuperAdmin) {
+                $flow = \App\Models\SurveyorFlow::where('department', $request->department)
+                    ->active()
+                    ->first();
+                
+                $isAuthorized = false;
+                if ($flow) {
+                    if ($flow->surveyor_type->value === 'USER' && $flow->user_id == auth()->id()) {
+                        $isAuthorized = true;
+                    } elseif ($flow->surveyor_type->value === 'ROLE' && auth()->user()->hasRole($flow->role->name)) {
+                        $isAuthorized = true;
+                    }
+                }
+
+                if (!$isAuthorized) {
+                    return back()->with('error', 'Anda tidak memiliki otoritas untuk mengisi penilaian departemen ' . $request->department);
+                }
+            }
+
             // Use new Application Service with DTO pattern
             $dto = SubmitScoreDTO::fromRequest($request);
             
@@ -244,6 +304,36 @@ class ProjectSurveyController extends Controller
         
         $pdf = \PDF::loadView('projects.survey.pdf.department-score', compact('survey', 'score', 'department'))->setPaper('a4', 'portrait');
         return $pdf->stream('Assessment_' . $department . '_' . ($survey->project->project_code ?? 'Survey') . '.pdf');
+    }
+
+    /**
+     * Export all department scores as a single PDF report
+     */
+    public function exportAllDepartmentsPdf($uid)
+    {
+        $survey = \App\Models\ProjectSurvey::where('uid', $uid)->with('project')->firstOrFail();
+        $scores = $survey->scores()->with(['criteria', 'submitter'])->orderBy('department')->get();
+        
+        $pdf = \PDF::loadView('projects.survey.pdf.all-departments', compact('survey', 'scores'))->setPaper('a4', 'portrait');
+        return $pdf->stream('Survey_Report_' . ($survey->project->project_code ?? 'Survey') . '.pdf');
+    }
+
+    /**
+     * Export summary of all completed surveys as Excel
+     */
+    public function exportSummaryExcel(SurveySummaryExcelService $excelService)
+    {
+        try {
+            $tempFile = $excelService->generate();
+            $filename = 'Summary_Survey_Project_' . date('Ymd_His') . '.xlsx';
+
+            return response()->download($tempFile, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+        } catch (Exception $e) {
+            \Log::error('Summary Excel export failed: ' . $e->getMessage());
+            return back()->with('error', 'Failed to export summary: ' . $e->getMessage());
+        }
     }
 
     public function updateStatus(Request $request, $uid)
@@ -347,6 +437,11 @@ class ProjectSurveyController extends Controller
     public function proceedToExecution($uid)
     {
         try {
+            // ROLE CHECK
+            if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+                return back()->with('error', 'Only administrators can proceed to execution.');
+            }
+
             $survey = $this->service->getSurveyByUid($uid);
             
             // Validate survey is feasible
@@ -355,8 +450,9 @@ class ProjectSurveyController extends Controller
             }
             
             // Validate all scores submitted
-            if ($survey->scores()->count() < 3) {
-                return back()->with('error', 'All department scores must be submitted first.');
+            $requiredCount = \App\Models\SurveyorFlow::active()->count() ?: 3;
+            if ($survey->scores()->count() < $requiredCount) {
+                return back()->with('error', 'All department scores (' . $requiredCount . ' depts) must be submitted first.');
             }
             
             \Log::info('Proceed to execution started', ['survey_uid' => $uid]);

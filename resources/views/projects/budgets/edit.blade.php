@@ -48,6 +48,29 @@
                 </div>
             </div>
 
+            <!-- Project Information Card -->
+            <div class="card" id="project-info-card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0 fs-15"><i class="ti ti-info-circle me-1 text-primary"></i> Project Information</h5>
+                </div>
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1 fs-13">Project Code</p>
+                            <h6 class="fw-bold mb-0" id="info-project-code">{{ $budget->project->project_number ?? '-' }}</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1 fs-13">Project Name</p>
+                            <h6 class="fw-bold mb-0" id="info-project-name">{{ $budget->project->project_name ?? '-' }}</h6>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="text-muted mb-1 fs-13">Project Value</p>
+                            <h6 class="fw-bold mb-0 text-primary" id="info-project-value">{{ isset($budget->project->project_value) ? 'Rp ' . number_format($budget->project->project_value, 0, ',', '.') : '-' }}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Cost Items -->
             <div class="card">
                 <div class="card-header">
@@ -68,7 +91,16 @@
                     <div class="tab-content pt-3">
                         @foreach(App\Enums\BudgetCategory::cases() as $index => $category)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="tab_{{ $category->value }}" role="tabpanel">
-                                <div class="d-flex justify-content-end mb-2">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="col-md-5">
+                                        <label class="form-label form-label-sm mb-1 text-muted" style="font-size: 0.8rem;">Upload Document (PDF, Word, Excel) - Optional</label>
+                                        <input type="file" class="form-control form-control-sm file-upload-input" id="file_{{ $category->value }}" data-category="{{ $category->value }}" accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                        @if(isset($budget->attachments[$category->value]))
+                                            <div class="mt-1" style="font-size: 0.8rem;">
+                                                <a href="{{ Storage::url($budget->attachments[$category->value]) }}" target="_blank" class="text-primary"><i class="ti ti-download me-1"></i>View existing document</a>
+                                            </div>
+                                        @endif
+                                    </div>
                                     <button type="button" class="btn btn-sm btn-primary add-item-btn" data-category="{{ $category->value }}">
                                         <i class="ti ti-plus me-1"></i> Add Item
                                     </button>
@@ -333,13 +365,26 @@
                 return;
             }
 
-            var formData = {
-                profit_margin_percent: $('#profit_margin_percent').val(),
-                items: items,
-                version: $('input[name="version"]').val(),
-                _token: $('input[name="_token"]').val(),
-                _method: 'PUT'
-            };
+            var formData = new FormData();
+            formData.append('profit_margin_percent', $('#profit_margin_percent').val());
+            formData.append('version', $('input[name="version"]').val());
+            formData.append('_token', $('input[name="_token"]').val());
+            formData.append('_method', 'PUT');
+
+            items.forEach(function(item, index) {
+                formData.append('items[' + index + '][category]', item.category);
+                formData.append('items[' + index + '][item_name]', item.item_name);
+                formData.append('items[' + index + '][qty]', item.qty);
+                formData.append('items[' + index + '][units]', item.units);
+                formData.append('items[' + index + '][unit_cost]', item.unit_cost);
+            });
+
+            $('.file-upload-input').each(function() {
+                var category = $(this).data('category');
+                if (this.files && this.files[0]) {
+                    formData.append('attachments[' + category + ']', this.files[0]);
+                }
+            });
 
             btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
 
@@ -347,6 +392,8 @@
                 url: form.attr('action'),
                 method: 'POST',
                 data: formData,
+                processData: false,
+                contentType: false,
                 success: function(response) {
                     Swal.fire({
                         icon: 'success',

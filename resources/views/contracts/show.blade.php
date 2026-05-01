@@ -35,6 +35,13 @@
                             </a>
                         </div>
                     @endif
+                    @if(!$contract->isLocked())
+                        <div class="mb-2">
+                            <a href="{{ route('final-contracts.edit', $contract->uid) }}" class="btn btn-warning d-flex align-items-center text-white">
+                                <i class="ti ti-edit me-1"></i>Edit Contract
+                            </a>
+                        </div>
+                    @endif
                 </div>
             </div>
             <!-- /Page Header -->

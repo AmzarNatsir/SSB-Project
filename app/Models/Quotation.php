@@ -82,51 +82,41 @@ class Quotation extends Model
     }
     
     // Logic for recalculating totals based on items and margin
-    public function calculateTotals()
+    public function calculateTotals($manualMargin = null)
     {
         $this->total_project_value = $this->items()->sum('total_price');
         
-        // Quotation price comes from the Budget Baseline (COGS)
-        // If linked budget exists, use its total_hpp, otherwise default to 0 or manual input logic (tbd)
         if ($this->budget) {
-             // Re-fetch budget to ensure latest totals
              $this->quotation_price = $this->budget->total_hpp ?? 0;
         }
 
-        // Profit = Project Value (Revenue from Items) - Quotation Price (Cost)
-        // Wait, requirements say: 
-        // PROFIT = TOTAL_PROJECT_VALUE - QUOTATION_PRICE
-        // But also: SELLING_PRICE = QUOTATION_PRICE * (1 + profit_margin%)
-        // And: total_project_value = sum(rate * qty * duration)
-        
-        // Let's stick to the core logic from the user request:
-        // "TOTAL_PROJECT_VALUE = rate × quantity × duration" -> Implemented in Items
-        // "QUOTATION_PRICE = total cost of goods sold (from Budget Baseline)"
-        // "PROFIT = TOTAL_PROJECT_VALUE - QUOTATION_PRICE"
-        
-        // However, there is also:
-        // "Selling Price (Target Margin): selling_price = total_hpp * (1 + profit_margin_percent / 100)"
-        
-        // Clarification:
-        // It seems `total_project_value` IS the `selling_price` effectively if we sum up the items which are "Revenue".
-        // OR, the items are "Cost" items?
-        // User says: "Prepare a price quote... Rate per unit... Target profit margin".
-        // And "TOTAL_PROJECT_VALUE = rate × quantity × duration".
-        // PROBABLY: The Items represent the revenue generation (Equipment rental, etc).
-        // So Total Project Value = Revenue.
-        
-        // Let's implement the straightforward summation first.
-        
         $this->profit_value = $this->total_project_value - $this->quotation_price;
         
-        if ($this->quotation_price > 0) {
-            $this->profit_margin_percent = ($this->profit_value / $this->quotation_price) * 100;
+        if ($manualMargin !== null) {
+            $this->profit_margin_percent = $manualMargin;
         } else {
-            $this->profit_margin_percent = 100; // undefined/infinite technically
+            if ($this->quotation_price > 0) {
+                $this->profit_margin_percent = ($this->profit_value / $this->quotation_price) * 100;
+            } else {
+                $this->profit_margin_percent = 100;
+            }
         }
         
-        $this->selling_price = $this->total_project_value; // As per logic implied by "PROFIT = TOTAL - COST"
+        // Clamp to 0-100 to avoid database range errors
+        $this->profit_margin_percent = max(0, min(100, $this->profit_margin_percent));
+        
+        $this->selling_price = $this->total_project_value;
 
         $this->save();
+    }
+
+    public function isLocked(): bool
+    {
+        // If project is in AMENDMENT status, unlock for editing
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return false;
+        }
+
+        return in_array($this->status, ['APPROVED', 'SENT']);
     }
 }

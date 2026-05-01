@@ -119,6 +119,10 @@
                                         class="{{ Request::is('scoring-plan-project*') ? 'active' : '' }}">Scoring Plan
                                         Project</a>
                                 </li>
+                                <li><a href="{{ route('surveyor-flows.index') }}"
+                                        class="{{ Request::is('surveyor-flows*') ? 'active' : '' }}">Pengaturan
+                                        Surveyor</a>
+                                </li>
                             </ul>
                         </li>
                     </ul>

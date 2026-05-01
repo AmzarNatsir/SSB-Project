@@ -8,6 +8,8 @@ use App\Models\ProjectSubCategory;
 use App\Models\User;
 use App\Models\EquimentRentalRatesHM;
 use App\Models\ProjectImage;
+use App\Models\ProjectHistory;
+use App\Models\ProjectAmendment;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -30,6 +32,7 @@ class ProjectController extends Controller
                         'NOT STARTED' => ['color' => 'bg-purple', 'text' => 'Plan'],
                         'ON PROGRESS' => ['color' => 'bg-info', 'text' => 'Survey'],
                         'COMPLETED' => ['color' => 'bg-success', 'text' => 'Completed'],
+                        'AMENDMENT' => ['color' => 'bg-danger', 'text' => 'Amendment'],
                         'ON HOLD' => ['color' => 'bg-warning', 'text' => 'On Hold'],
                         'CANCELLED' => ['color' => 'bg-danger', 'text' => 'Cancelled'],
                     ];
@@ -51,12 +54,14 @@ class ProjectController extends Controller
                     $editBtn = '';
                     $deleteBtn = '';
                     
-                    if ($row->project_status === 'NOT STARTED') {
+                    if ($row->project_status === 'NOT STARTED' || $row->project_status === 'AMENDMENT') {
                         $editBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-warning me-1 edit-project-btn" 
                             data-id="'.$row->uid.'">
                             <i class="ti ti-edit"></i>
                         </a>';
-                        
+                    }
+
+                    if ($row->project_status === 'NOT STARTED') {
                         $deleteBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-danger delete-project-btn" 
                             data-id="'.$row->uid.'">
                             <i class="ti ti-trash"></i>
@@ -124,7 +129,12 @@ class ProjectController extends Controller
             ->where('uid', $id)
             ->firstOrFail();
         
-        return view('projects.show', compact('project'));
+        $categories = ProjectCategory::all();
+        $subCategories = ProjectSubCategory::all();
+        $users = User::all();
+        $equipmentRates = EquimentRentalRatesHM::all();
+        
+        return view('projects.show', compact('project', 'categories', 'subCategories', 'users', 'equipmentRates'));
     }
 
     /**
@@ -164,7 +174,33 @@ class ProjectController extends Controller
             'project_value' => 'nullable|numeric',
         ]);
 
-        $project->update($request->all());
+        if ($project->project_status === 'AMENDMENT') {
+            $oldData = $project->only($project->getFillable());
+            $project->update($request->all());
+            $newData = $project->only($project->getFillable());
+
+            // Identify changed fields
+            $changes = array_diff_assoc($newData, $oldData);
+            
+            if (!empty($changes)) {
+                $activeAmendment = ProjectAmendment::where('project_id', $project->id)
+                    ->where('status', 'IN_PROGRESS')
+                    ->latest()
+                    ->first();
+
+                ProjectHistory::create([
+                    'project_id' => $project->id,
+                    'amendment_id' => $activeAmendment ? $activeAmendment->id : null,
+                    'model_type' => 'Project',
+                    'model_id' => $project->id,
+                    'old_values' => array_intersect_key($oldData, $changes),
+                    'new_values' => $changes,
+                    'changed_by' => auth()->id(),
+                ]);
+            }
+        } else {
+            $project->update($request->all());
+        }
 
         return response()->json(['success' => 'Project updated successfully.']);
     }
@@ -280,13 +316,16 @@ class ProjectController extends Controller
                   ->orWhere('project_number', 'LIKE', '%' . $term . '%');
         }
         
-        $projects = $query->select('id', 'project_name', 'project_number')
+        $projects = $query->select('id', 'project_name', 'project_number', 'project_value')
                         ->limit(20)
                         ->get()
                         ->map(function($project) {
                             return [
                                 'id' => $project->id,
-                                'text' => $project->project_name . ' (' . $project->project_number . ')'
+                                'text' => $project->project_name . ' (' . $project->project_number . ')',
+                                'project_name' => $project->project_name,
+                                'project_number' => $project->project_number,
+                                'project_value' => $project->project_value
                             ];
                         });
                         

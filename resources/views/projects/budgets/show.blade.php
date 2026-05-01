@@ -164,6 +164,13 @@
                         <div class="tab-content pt-2">
                             @foreach(App\Enums\BudgetCategory::cases() as $category)
                                 <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="tab_{{ $category->value }}" role="tabpanel">
+                                    @if(isset($budget->attachments[$category->value]))
+                                        <div class="mb-3 d-flex justify-content-end">
+                                            <a href="{{ Storage::url($budget->attachments[$category->value]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-file-download me-1"></i> View Attached Document
+                                            </a>
+                                        </div>
+                                    @endif
                                     <div class="table-responsive">
                                         <table class="table table-nowrap table-hover border-top-0">
                                             <thead class="bg-light-500">

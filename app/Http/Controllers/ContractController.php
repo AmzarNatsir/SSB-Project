@@ -43,6 +43,49 @@ class ContractController extends Controller
         }
     }
 
+    public function edit(string $uid)
+    {
+        $contract = $this->contractRepository->findByUid($uid);
+        if (!$contract) {
+            abort(404);
+        }
+
+        if ($contract->isLocked()) {
+            return redirect()->route('final-contracts.show', $contract->uid)->with('error', 'Contract is locked and cannot be edited.');
+        }
+
+        $projects = Project::whereHas('negotiations', function ($q) {
+            $q->where('status', NegotiationStatus::APPROVED);
+        })->get();
+
+        return view('contracts.edit', compact('contract', 'projects'));
+    }
+
+    public function update(ContractRequest $request, string $uid)
+    {
+        try {
+            $contract = $this->contractRepository->findByUid($uid);
+            if (!$contract) abort(404);
+
+            if ($contract->isLocked()) {
+                throw new Exception('Contract is locked and cannot be edited.');
+            }
+
+            // Logic to update contract...
+            // Assuming the service has an update method or we do it here.
+            $data = $request->validated();
+            if ($request->hasFile('attachment')) {
+                $data['attachment'] = $request->file('attachment');
+            }
+            
+            $this->contractService->updateContract($contract, $data);
+
+            return redirect()->route('final-contracts.show', $contract->uid)->with('success', 'Contract successfully updated.');
+        } catch (Exception $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+    }
+
     public function show(string $uid)
     {
         $contract = $this->contractRepository->findByUid($uid);

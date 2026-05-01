@@ -36,6 +36,8 @@
         z-index: 9999 !important;
         border-radius: 6px !important;
         background-color: #fff !important;
+        width: auto !important;
+        min-width: 100% !important;
     }
     .select2-container--open {
         z-index: 9999 !important;
@@ -104,8 +106,11 @@
             <div class="col-xl-12">
                 <div class="card">
                     <div class="card-body checkout-tab">
-                        <form id="quotationForm" action="{{ route('quotations.store') }}">
+                        <form id="quotationForm" action="{{ isset($quotation) ? route('quotations.update', $quotation->uid) : route('quotations.store') }}">
                             @csrf
+                            @if(isset($quotation))
+                                @method('PUT')
+                            @endif
                             <div class="step-arrow-nav mt-n3 mx-n3 mb-3">
                                 <!-- Custom Wizard Style -->
                                 <style>
@@ -271,39 +276,87 @@
                                 <div class="tab-pane fade show active" id="step1" role="tabpanel">
                                     <div class="row">
                                         <div class="col-lg-12">
-                                            <h5 class="mb-3">Select Project</h5>
-                                            <p class="text-muted">Choose a project with an approved budget baseline to proceed.</p>
+                                            <h5 class="mb-3">{{ isset($quotation) ? 'Project Information' : 'Select Project' }}</h5>
+                                            @if(!isset($quotation))
+                                                <p class="text-muted">Choose a project with an approved budget baseline to proceed.</p>
+                                            @endif
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="mb-3">
                                                 <label class="form-label">Project</label>
-                                                <select class="form-select" id="project_id" name="project_id" required>
-                                                    <option value="">Select Project...</option>
-                                                    @foreach($projects as $project)
-                                                        @php $budget = $project->latest_budget; @endphp
-                                                        <option value="{{ $project->id }}" 
-                                                            data-budget-id="{{ $budget?->id }}" 
-                                                            data-budget-hpp="{{ $budget?->total_hpp ?? 0 }}"
-                                                            data-budget-labor="{{ $budget?->total_labor_cost ?? 0 }}"
-                                                            data-budget-equipment="{{ $budget?->total_equipment_cost ?? 0 }}"
-                                                            data-budget-maintenance="{{ $budget?->total_maintenance_cost ?? 0 }}"
-                                                            data-budget-operational="{{ $budget?->total_operational_cost ?? 0 }}"
-                                                            data-budget-mobilization="{{ $budget?->total_mobilization_cost ?? 0 }}"
-                                                            data-budget-other="{{ $budget?->total_other_cost ?? 0 }}"
-                                                            data-budget-margin="{{ $budget?->profit_margin_percent ?? 0 }}"
-                                                            data-budget-selling="{{ $budget?->selling_price ?? 0 }}"
-                                                        >
-                                                            {{ $project->project_number }} - {{ $project->project_name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="hidden" name="project_budget_id" id="project_budget_id">
+                                                @if(isset($quotation))
+                                                    <input type="text" class="form-control" value="{{ $quotation->project->project_number }} - {{ $quotation->project->project_name }}" readonly disabled>
+                                                    <input type="hidden" name="project_id" id="project_id_hidden" value="{{ $quotation->project_id }}">
+                                                    <!-- Keep select but hidden and disabled to satisfy JS logic if needed, but we'll use a better way -->
+                                                    <select class="form-select d-none" id="project_id" name="project_id_disabled" disabled>
+                                                        @foreach($projects as $project)
+                                                            @php $budget = $project->latest_budget; @endphp
+                                                            <option value="{{ $project->id }}" 
+                                                                {{ $quotation->project_id == $project->id ? 'selected' : '' }}
+                                                                data-project-number="{{ $project->project_number }}"
+                                                                data-project-name="{{ $project->project_name }}"
+                                                                data-budget-id="{{ $budget?->id }}" 
+                                                                data-budget-hpp="{{ $budget?->total_hpp ?? 0 }}"
+                                                                data-budget-labor="{{ $budget?->total_labor_cost ?? 0 }}"
+                                                                data-budget-equipment="{{ $budget?->total_equipment_cost ?? 0 }}"
+                                                                data-budget-maintenance="{{ $budget?->total_maintenance_cost ?? 0 }}"
+                                                                data-budget-operational="{{ $budget?->total_operational_cost ?? 0 }}"
+                                                                data-budget-mobilization="{{ $budget?->total_mobilization_cost ?? 0 }}"
+                                                                data-budget-other="{{ $budget?->total_other_cost ?? 0 }}"
+                                                                data-budget-margin="{{ $budget?->profit_margin_percent ?? 0 }}"
+                                                                data-budget-selling="{{ $budget?->selling_price ?? 0 }}"
+                                                            >
+                                                                {{ $project->project_number }} - {{ $project->project_name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                @else
+                                                    <select class="form-select" id="project_id" name="project_id" required>
+                                                        <option value="">Select Project...</option>
+                                                        @foreach($projects as $project)
+                                                            @php $budget = $project->latest_budget; @endphp
+                                                            <option value="{{ $project->id }}" 
+                                                                data-project-number="{{ $project->project_number }}"
+                                                                data-project-name="{{ $project->project_name }}"
+                                                                data-budget-id="{{ $budget?->id }}" 
+                                                                data-budget-hpp="{{ $budget?->total_hpp ?? 0 }}"
+                                                                data-budget-labor="{{ $budget?->total_labor_cost ?? 0 }}"
+                                                                data-budget-equipment="{{ $budget?->total_equipment_cost ?? 0 }}"
+                                                                data-budget-maintenance="{{ $budget?->total_maintenance_cost ?? 0 }}"
+                                                                data-budget-operational="{{ $budget?->total_operational_cost ?? 0 }}"
+                                                                data-budget-mobilization="{{ $budget?->total_mobilization_cost ?? 0 }}"
+                                                                data-budget-other="{{ $budget?->total_other_cost ?? 0 }}"
+                                                                data-budget-margin="{{ $budget?->profit_margin_percent ?? 0 }}"
+                                                                data-budget-selling="{{ $budget?->selling_price ?? 0 }}"
+                                                            >
+                                                                {{ $project->project_number }} - {{ $project->project_name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                @endif
+                                                <input type="hidden" name="project_budget_id" id="project_budget_id" value="{{ isset($quotation) ? $quotation->project_budget_id : '' }}">
                                             </div>
                                         </div>
                                         <div class="col-lg-6">
                                             <div class="card bg-light border-0">
                                                 <div class="card-body">
-                                                    <h6 class="mb-3">Budget Baseline Info</h6>
+                                                    <h6 class="mb-3">Project & Budget Info</h6>
+                                                    <div class="mb-3 p-2 border rounded bg-white">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p class="text-muted mb-1 fs-12">Project Code</p>
+                                                                <h6 class="mb-0 fs-13" id="display_project_code">-</h6>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p class="text-muted mb-1 fs-12">Project Name</p>
+                                                                <h6 class="mb-0 fs-13 text-truncate" id="display_project_name">-</h6>
+                                                            </div>
+                                                            <div class="col-md-12 mt-2">
+                                                                <p class="text-muted mb-1 fs-12">Original Project Value (Budget Selling Price)</p>
+                                                                <h6 class="mb-0 fs-13 text-primary" id="display_project_value">Rp 0</h6>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                     <div class="row g-2">
                                                         <div class="col-6">
                                                             <div class="p-2 border rounded bg-white">
@@ -426,7 +479,7 @@
                                                     <span>Desired Profit Margin (%)</span>
                                                     <span class="fw-bold" id="margin_display">0%</span>
                                                 </label>
-                                                <input type="range" class="form-range" min="0" max="100" step="0.5" id="profit_margin_percent" name="profit_margin_percent" value="0">
+                                                <input type="range" class="form-range" min="0" max="100" step="0.5" id="profit_margin_percent" name="profit_margin_percent" value="{{ isset($quotation) ? $quotation->profit_margin_percent : 0 }}">
                                             </div>
                                             
                                             <div class="card bg-soft-info border-info">
@@ -513,11 +566,11 @@
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Terms & Conditions</label>
-                                                <textarea class="form-control" name="terms_conditions" rows="3" placeholder="Enter specific terms..."></textarea>
+                                                <textarea class="form-control" name="terms_conditions" rows="3" placeholder="Enter specific terms...">{{ isset($quotation) ? $quotation->terms_conditions : '' }}</textarea>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Valid Until</label>
-                                                <input type="date" class="form-control" name="valid_until">
+                                                <input type="date" class="form-control" name="valid_until" value="{{ isset($quotation) && $quotation->valid_until ? $quotation->valid_until->format('Y-m-d') : '' }}">
                                             </div>
                                         </div>
                                     </div>
@@ -579,6 +632,53 @@
         console.log('Quotation Wizard DOM Ready');
 
         // ==========================================
+        // Helper Functions (Hoisted)
+        // ==========================================
+        function formatCurrency(value) {
+            return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
+        }
+
+        function formatNumberID(value) {
+            if (!value) return "";
+            // Parse as float, round to integer, then format with dots
+            var num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) : value;
+            var val = Math.round(num || 0).toString();
+            return val.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function unformatNumber(value) {
+            if (!value) return 0;
+            return parseFloat(value.toString().replace(/\./g, '')) || 0;
+        }
+
+        function calculateRow(row) {
+            var rateStr = row.find('.item-rate').val() || "0";
+            var rate = parseFloat(rateStr.replace(/\./g, '')) || 0;
+            
+            var qtyStr = row.find('.item-qty').val() || "0";
+            var qty = parseFloat(qtyStr) || 0;
+            
+            var durStr = row.find('.item-duration').val() || "0";
+            var dur = parseFloat(durStr) || 0;
+            
+            var total = rate * qty * dur;
+            row.find('.item-total').text(formatCurrency(total));
+            row.data('total', total);
+        }
+
+        function calculateGrandTotal() {
+            var total = 0;
+            $('#items_table tbody tr').each(function() {
+                total += ($(this).data('total') || 0);
+            });
+            
+            $('#total_project_value_display').text(formatCurrency(total));
+            $('#analysis_item_total').text(formatCurrency(total));
+            $('#analysis_item_total').data('value', total);
+            recalculateSimulation();
+        }
+
+        // ==========================================
         // Wizard Navigation
         // ==========================================
         $('.nexttab').click(function() {
@@ -606,26 +706,37 @@
         
         function handleProjectChange() {
             console.log('Handle Project Change Triggered');
-            var select = document.getElementById('project_id');
-            var selectedOption = select.options[select.selectedIndex];
+            var select = $('#project_id');
+            var projectId = select.val();
             
-            if (!selectedOption || select.value === "") {
-                console.log('No project selected');
+            // If select is empty/disabled, try hidden input
+            if (!projectId && $('#project_id_hidden').length > 0) {
+                projectId = $('#project_id_hidden').val();
+                // If we are using hidden ID, we need to find the option in the hidden/disabled select
+                // to get the data attributes.
+            }
+
+            var selectedOption = select.find('option[value="' + projectId + '"]');
+            
+            if (!selectedOption.length || !projectId) {
+                console.log('No project selected or found');
                 resetProjectInfo();
                 return;
             }
 
-            var budgetId = selectedOption.getAttribute('data-budget-id');
-            var hpp = parseFloat(selectedOption.getAttribute('data-budget-hpp')) || 0;
-            var labor = parseFloat(selectedOption.getAttribute('data-budget-labor')) || 0;
-            var equipment = parseFloat(selectedOption.getAttribute('data-budget-equipment')) || 0;
-            var maintenance = parseFloat(selectedOption.getAttribute('data-budget-maintenance')) || 0;
-            var operational = parseFloat(selectedOption.getAttribute('data-budget-operational')) || 0;
-            var mobilization = parseFloat(selectedOption.getAttribute('data-budget-mobilization')) || 0;
-            var other = parseFloat(selectedOption.getAttribute('data-budget-other')) || 0;
-            var margin = parseFloat(selectedOption.getAttribute('data-budget-margin')) || 0;
-            var selling = parseFloat(selectedOption.getAttribute('data-budget-selling')) || 0;
-            var projectName = selectedOption.text;
+            var projectNumber = selectedOption.data('project-number') || '-';
+            var projectActualName = selectedOption.data('project-name') || '-';
+            var budgetId = selectedOption.data('budget-id');
+            var hpp = parseFloat(selectedOption.data('budget-hpp')) || 0;
+            var labor = parseFloat(selectedOption.data('budget-labor')) || 0;
+            var equipment = parseFloat(selectedOption.data('budget-equipment')) || 0;
+            var maintenance = parseFloat(selectedOption.data('budget-maintenance')) || 0;
+            var operational = parseFloat(selectedOption.data('budget-operational')) || 0;
+            var mobilization = parseFloat(selectedOption.data('budget-mobilization')) || 0;
+            var other = parseFloat(selectedOption.data('budget-other')) || 0;
+            var margin = parseFloat(selectedOption.data('budget-margin')) || 0;
+            var selling = parseFloat(selectedOption.data('budget-selling')) || 0;
+            var projectName = selectedOption.text();
             
             console.log('Selected Project Details:', {
                 name: projectName,
@@ -636,6 +747,9 @@
             $('#project_budget_id').val(budgetId);
             
             // Update Displays
+            $('#display_project_code').text(projectNumber);
+            $('#display_project_name').text(projectActualName);
+            $('#display_project_value').text(formatCurrency(selling));
             $('#display_labor').text(formatCurrency(labor));
             $('#display_equipment').text(formatCurrency(equipment));
             $('#display_maintenance').text(formatCurrency(maintenance));
@@ -651,6 +765,7 @@
             
             // Sim data
             $('#sim_hpp').text(formatCurrency(hpp));
+            console.log('Project HPP:', hpp, 'Budget Margin:', margin);
             window.currentHpp = hpp;
             
             if (!budgetId || budgetId === "") {
@@ -660,10 +775,18 @@
             }
             
             recalculateSimulation();
+            
+            // Set margin from budget if not in edit mode
+            @if(!isset($quotation))
+                console.log('New Quotation Mode: Setting slider to budget margin:', margin);
+                $('#profit_margin_percent').val(margin).trigger('input');
+            @endif
         }
 
         function resetProjectInfo() {
-            $('#project_budget_id').val('');
+            $('#display_project_code').text('-');
+            $('#display_project_name').text('-');
+            $('#display_project_value').text('Rp 0');
             $('#display_labor').text('Rp 0');
             $('#display_equipment').text('Rp 0');
             $('#display_maintenance').text('Rp 0');
@@ -696,35 +819,22 @@
         });
 
         // Initial trigger
-        if ($('#project_id').val() !== "") {
+        if ($('#project_id_hidden').length > 0 || ($('#project_id').val() && $('#project_id').val() !== "")) {
+            console.log('Initial trigger for project load. Project ID:', $('#project_id').val() || $('#project_id_hidden').val());
             handleProjectChange();
+            
+            @if(isset($quotation))
+                // For edit mode, we need to ensure simulation and analysis are updated after items load
+                // The actual item loading happens in the $.get block below
+                var prevMargin = @json($quotation->profit_margin_percent);
+                $('#summary_margin').text(prevMargin + '%');
+                $('#margin_display').text(prevMargin + '%');
+                $('#profit_margin_percent').val(prevMargin).trigger('input');
+            @endif
         }
 
-        // ==========================================
-        // Units & Pricing Logic
-        // ==========================================
-        
-        // Fetch Units through Backend Proxy to bypass CORS/Auth
-        var unitsData = [];
-        const unitsProxyRoute = "{{ route('quotations.units') }}";
-        
-        console.log('Fetching units via proxy:', unitsProxyRoute);
-
-        $.get(unitsProxyRoute).done(function(data) {
-            console.log('Units fetched through proxy:', data);
-            // Handle both flat array and Laravel-style { data: [...] }
-            if (Array.isArray(data)) {
-                unitsData = data;
-            } else if (data && Array.isArray(data.data)) {
-                unitsData = data.data;
-            } else {
-                unitsData = [];
-            }
-        }).fail(function(xhr) {
-            console.log('Proxy fetch failed:', xhr.status, xhr.statusText);
-        });
-        
-        $('#add_item_btn').click(function() {
+        function addItemRow(data = null) {
+            console.log('addItemRow called with data:', data);
             var index = $('#items_table tbody tr').length;
             var template = $('#item_row_template').html().replace(/{index}/g, index);
             var row = $(template);
@@ -732,25 +842,34 @@
             var select = row.find('.item-unit-select-init');
             if (unitsData.length > 0) {
                 unitsData.forEach(function(u) {
-                    select.append(new Option(u.name, u.name));
+                    var selected = (data && data.unit_name === u.name) ? 'selected' : '';
+                    select.append(new Option(u.name, u.name, false, selected === 'selected'));
                 });
-            } else {
-                select.append(new Option('Excavator PC200', 'Excavator PC200'));
-                select.append(new Option('Dump Truck', 'Dump Truck'));
-                select.append(new Option('Manpower', 'Manpower'));
+            } else if (data) {
+                select.append(new Option(data.unit_name, data.unit_name, true, true));
+            }
+            
+            if (data) {
+                row.find('.item-rate').val(formatNumberID(data.rate));
+                row.find('.item-qty').val(data.quantity);
+                row.find('.item-duration').val(data.duration);
             }
             
             $('#items_table tbody').append(row);
             
-            // Initialize Select2 for the new row with a small delay to avoid race conditions
+            // Initialize Select2
             setTimeout(function() {
                 var s2 = row.find('.item-unit-select-init').select2({
-                    dropdownParent: row,
+                    dropdownParent: row.closest('.table-responsive'),
                     placeholder: "Select Unit",
-                    width: '100%'
+                    width: '100%',
+                    dropdownAutoWidth: true
                 });
+                
+                if (data) {
+                    s2.val(data.unit_name).trigger('change.select2');
+                }
 
-                // Duplicate Check
                 s2.on('select2:select', function(e) {
                     var selectedValue = e.params.data.id;
                     var isDuplicate = false;
@@ -776,7 +895,65 @@
                         currentSelect.val(null).trigger('change');
                     }
                 });
+                
+                calculateRow(row);
             }, 100);
+        }
+
+        // ==========================================
+        // Units & Pricing Logic
+        // ==========================================
+        
+        // Fetch Units through Backend Proxy to bypass CORS/Auth
+        var unitsData = [];
+        const unitsProxyRoute = "{{ route('quotations.units') }}";
+        
+        console.log('Fetching units via proxy:', unitsProxyRoute);
+
+        $.get(unitsProxyRoute).done(function(data) {
+            console.log('Units fetched through proxy:', data);
+            // Handle both flat array and Laravel-style { data: [...] }
+            if (Array.isArray(data)) {
+                unitsData = data;
+            } else if (data && Array.isArray(data.data)) {
+                unitsData = data.data;
+            } else {
+                unitsData = [];
+            }
+
+            // Load Existing Items if in Edit Mode
+            @if(isset($quotation))
+                loadExistingItems();
+            @endif
+        }).fail(function(xhr) {
+            console.log('Proxy fetch failed:', xhr.status, xhr.statusText);
+            @if(isset($quotation))
+                loadExistingItems(); // Still try to load items even if proxy fails
+            @endif
+        });
+
+        function loadExistingItems() {
+            console.log('Loading existing items...');
+            @if(isset($quotation))
+                @foreach($quotation->items as $item)
+                    addItemRow({
+                        unit_name: "{{ $item->unit_name }}",
+                        rate: "{{ $item->rate }}",
+                        quantity: "{{ $item->quantity }}",
+                        duration: "{{ $item->duration }}"
+                    });
+                @endforeach
+                
+                // Finalize recalculation
+                setTimeout(function() {
+                    calculateGrandTotal();
+                    recalculateSimulation();
+                }, 1000);
+            @endif
+        }
+        
+        $('#add_item_btn').click(function() {
+            addItemRow();
         });
         
         $(document).on('click', '.remove-item', function() {
@@ -787,14 +964,9 @@
         $(document).on('input change', '.item-rate, .item-qty, .item-duration', function() {
             var row = $(this).closest('tr');
             
-            // Unformat and then format with thousand separators
-            var rawValue = this.value.replace(/[^0-9+]/g, '');
-            if (rawValue !== "") {
-                if ($(this).hasClass('item-duration')) {
-                    this.value = rawValue; // Keep simple for duration
-                } else {
-                    this.value = formatNumberID(rawValue);
-                }
+            if ($(this).hasClass('item-rate')) {
+                var rawValue = this.value.replace(/[^0-9]/g, '');
+                this.value = formatNumberID(rawValue);
             }
 
             calculateRow(row);
@@ -808,38 +980,7 @@
             }
         });
 
-        function formatNumberID(value) {
-            if (!value) return "";
-            var val = value.toString().replace(/[^0-9]/g, "");
-            return val.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        }
 
-        function unformatNumber(value) {
-            if (!value) return 0;
-            return parseFloat(value.toString().replace(/\./g, '')) || 0;
-        }
-
-        function calculateRow(row) {
-            var rate = unformatNumber(row.find('.item-rate').val());
-            var qty = unformatNumber(row.find('.item-qty').val());
-            var dur = unformatNumber(row.find('.item-duration').val());
-            
-            var total = rate * qty * dur;
-            row.find('.item-total').text(formatCurrency(total));
-            row.data('total', total);
-        }
-
-        function calculateGrandTotal() {
-            var total = 0;
-            $('#items_table tbody tr').each(function() {
-                total += ($(this).data('total') || 0);
-            });
-            
-            $('#total_project_value_display').text(formatCurrency(total));
-            $('#analysis_item_total').text(formatCurrency(total));
-            $('#analysis_item_total').data('value', total);
-            recalculateSimulation();
-        }
 
         // ==========================================
         // Profit Planning Logic
@@ -855,6 +996,7 @@
             
             $('#margin_display').text(margin + '%');
             $('#summary_margin').text(margin + '%');
+            $('#summary_hpp').text(formatCurrency(hpp));
             
             var targetSellingPrice = 0;
             if (hpp > 0) {
@@ -868,6 +1010,7 @@
             $('#sim_selling').text(formatCurrency(targetSellingPrice));
             $('#sim_profit').text(formatCurrency(targetProfit));
             $('#analysis_target_total').text(formatCurrency(targetSellingPrice));
+            $('#sim_hpp').text(formatCurrency(hpp));
             
             var diff = projectValue - targetSellingPrice;
             var statusBadge = $('#margin_status_badge');
@@ -886,9 +1029,6 @@
             }
         }
 
-        function formatCurrency(value) {
-            return 'Rp ' + new Intl.NumberFormat('id-ID').format(value);
-        }
         
         $('#quotationForm').on('submit', function(e) {
             e.preventDefault();
@@ -906,7 +1046,9 @@
                     
                     // Sanitize numeric fields by removing thousand separators
                     $.each(formData, function(i, field) {
-                        if (field.name.includes('[rate]') || field.name.includes('[quantity]')) {
+                        // Rate has dots as thousand separators (formatted by JS)
+                        // Quantity and Duration use type="number" which use dots as decimals
+                        if (field.name.includes('[rate]')) {
                             field.value = field.value.toString().replace(/\./g, '');
                         }
                     });

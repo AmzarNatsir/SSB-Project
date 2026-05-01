@@ -88,6 +88,21 @@ class Negotiation extends Model
     // Helper to check if can add round
     public function canAddRound(): bool
     {
+        // Jika project sedang dalam status AMENDMENT, allow adding rounds
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return true;
+        }
+
         return in_array($this->status, [NegotiationStatus::DRAFT, NegotiationStatus::NEGOTIATING]);
+    }
+
+    public function isLocked(): bool
+    {
+        // If project is in AMENDMENT status, unlock for editing
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return false;
+        }
+
+        return $this->status === NegotiationStatus::APPROVED;
     }
 }

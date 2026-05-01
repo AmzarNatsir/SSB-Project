@@ -255,6 +255,15 @@
                                                                     PDF
                                                                 </a>
                                                             </li>
+                                                            @if(!$quote->isLocked())
+                                                            <li>
+                                                                <a class="dropdown-item"
+                                                                    href="{{ route('quotations.edit', $quote->uid) }}">
+                                                                    <i class="ri-edit-fill align-bottom me-2 text-muted"></i>
+                                                                    Edit
+                                                                </a>
+                                                            </li>
+                                                            @endif
                                                             @if($quote->status === 'DRAFT')
                                                                 <li>
                                                                     <form action="{{ route('quotations.submit', $quote->uid) }}"

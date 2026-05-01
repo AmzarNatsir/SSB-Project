@@ -227,4 +227,12 @@ class Project extends Model
     {
         return $this->hasOne(Contract::class)->latestOfMany();
     }
+
+    /**
+     * Get the amendments for the project
+     */
+    public function amendments()
+    {
+        return $this->hasMany(ProjectAmendment::class);
+    }
 }

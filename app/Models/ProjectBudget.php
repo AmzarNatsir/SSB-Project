@@ -31,6 +31,7 @@ class ProjectBudget extends Model
         'current_approval_level',
         'created_by',
         'updated_by',
+        'attachments',
     ];
 
     protected static function boot()
@@ -62,6 +63,7 @@ class ProjectBudget extends Model
         'profit_margin_percent' => 'decimal:2',
         'selling_price' => 'decimal:2',
         'current_approval_level' => 'integer',
+        'attachments' => 'array',
     ];
 
     public function project(): BelongsTo
@@ -104,6 +106,11 @@ class ProjectBudget extends Model
     // Logic
     public function isLocked(): bool
     {
+        // If project is in AMENDMENT status, unlock for editing
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return false;
+        }
+
         return $this->status === BudgetStatus::BASELINE_APPROVED;
     }
     

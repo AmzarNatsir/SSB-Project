@@ -41,7 +41,7 @@ class QuotationService
                 }
             }
 
-            $quotation->calculateTotals();
+            $quotation->calculateTotals($data['profit_margin_percent'] ?? null);
             return $quotation;
         });
     }
@@ -52,6 +52,7 @@ class QuotationService
             $quotation->update([
                 'valid_until' => $data['valid_until'] ?? $quotation->valid_until,
                 'terms_conditions' => $data['terms_conditions'] ?? $quotation->terms_conditions,
+                'profit_margin_percent' => $data['profit_margin_percent'] ?? $quotation->profit_margin_percent,
                 'updated_by' => auth()->id(),
             ]);
 
@@ -108,7 +109,7 @@ class QuotationService
                  // For the Service `update`, we'll strictly update fields passed.
             }
 
-            $quotation->calculateTotals();
+            $quotation->calculateTotals($data['profit_margin_percent'] ?? null);
             return $quotation;
         });
     }

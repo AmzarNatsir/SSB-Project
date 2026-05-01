@@ -36,6 +36,21 @@
                                     <i class="ti ti-edit me-1"></i> Edit
                                 </a>
                             @endif
+                            
+                            @if($project->project_status === 'COMPLETED')
+                                <button type="button" class="btn btn-danger initiate-amendment-btn" data-uid="{{ $project->uid }}">
+                                    <i class="ti ti-edit me-1"></i> Amandemen Project
+                                </button>
+                            @endif
+
+                            @if($project->project_status === 'AMENDMENT')
+                                <button type="button" class="btn btn-success finalize-amendment-btn" data-id="{{ $project->amendments->where('status', 'IN_PROGRESS')->first()->id ?? '' }}">
+                                    <i class="ti ti-check me-1"></i> Selesaikan Amandemen
+                                </button>
+                                <a href="javascript:void(0);" class="btn btn-warning edit-project-btn" data-id="{{ $project->uid }}">
+                                    <i class="ti ti-edit me-1"></i> Edit Project
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -112,6 +127,11 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="manpower-tab" data-bs-toggle="tab" data-bs-target="#manpower" type="button" role="tab">
                                 <i class="ti ti-users me-1"></i> Work Force
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="amendment-history-tab" data-bs-toggle="tab" data-bs-target="#amendment-history" type="button" role="tab">
+                                <i class="ti ti-history me-1"></i> History Amandemen
                             </button>
                         </li>
                     </ul>
@@ -1006,6 +1026,76 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Amendment History Tab -->
+                        <div class="tab-pane fade" id="amendment-history" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-12">
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-history me-2 text-primary"></i>History Amandemen
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            @forelse($project->amendments()->orderBy('created_at', 'desc')->get() as $amendment)
+                                                <div class="mb-4 p-3 border rounded">
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="mb-0 fw-bold">{{ $amendment->amendment_number }}</h6>
+                                                        <span class="badge bg-{{ $amendment->status === 'FINALIZED' ? 'success' : 'info' }}">
+                                                            {{ $amendment->status }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mb-1 text-muted small">Alasan: {{ $amendment->reason }}</p>
+                                                    <p class="mb-2 text-muted small">Tanggal: {{ $amendment->created_at->format('d M Y, H:i') }} | Pemohon: {{ $amendment->requester->name ?? '-' }}</p>
+                                                    
+                                                    @if($amendment->histories->isNotEmpty())
+                                                        <div class="mt-3">
+                                                            <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#history-{{ $amendment->id }}">
+                                                                <i class="ti ti-eye me-1"></i> Lihat Detail Perubahan
+                                                            </button>
+                                                            <div class="collapse" id="history-{{ $amendment->id }}">
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-sm table-bordered">
+                                                                        <thead>
+                                                                            <tr class="bg-light">
+                                                                                <th>Model</th>
+                                                                                <th>Kolom</th>
+                                                                                <th>Nilai Lama</th>
+                                                                                <th>Nilai Baru</th>
+                                                                                <th>Waktu</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            @foreach($amendment->histories as $history)
+                                                                                @foreach($history->new_values as $key => $newValue)
+                                                                                    <tr>
+                                                                                        <td>{{ $history->model_type }}</td>
+                                                                                        <td>{{ str_replace('_', ' ', ucfirst($key)) }}</td>
+                                                                                        <td class="text-danger">{{ $history->old_values[$key] ?? '-' }}</td>
+                                                                                        <td class="text-success">{{ $newValue }}</td>
+                                                                                        <td>{{ $history->created_at->format('d M Y, H:i') }}</td>
+                                                                                    </tr>
+                                                                                @endforeach
+                                                                            @endforeach
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            @empty
+                                                <div class="text-center py-4 text-muted">
+                                                    Belum ada riwayat amandemen.
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         
                     </div>
                 </div>
@@ -1013,7 +1103,35 @@
 
         </div>
     </div>
+    <!-- Amendment Reason Modal -->
+    <div class="modal fade" id="amendmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Inisiasi Amandemen Project</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="amendmentForm">
+                        @csrf
+                        <input type="hidden" name="project_uid" id="amendment_project_uid">
+                        <div class="mb-3">
+                            <label class="form-label">Alasan Amandemen</label>
+                            <textarea class="form-control" name="reason" rows="4" required placeholder="Jelaskan alasan dilakukannya amandemen..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" id="confirmAmendmentBtn">Mulai Amandemen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- /Page Wrapper -->
+
+    @include('projects.partials.edit_project_offcanvas')
 
     @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
@@ -1271,6 +1389,191 @@
                     }
                 });
             }
+
+            // Amendment Actions
+            $('.initiate-amendment-btn').on('click', function() {
+                $('#amendment_project_uid').val($(this).data('uid'));
+                $('#amendmentModal').modal('show');
+            });
+
+            $('#confirmAmendmentBtn').on('click', function() {
+                var formData = $('#amendmentForm').serialize();
+                $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Processing...');
+
+                $.ajax({
+                    url: '{{ route("project-amendments.store") }}',
+                    method: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.success,
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        $('#confirmAmendmentBtn').prop('disabled', false).text('Mulai Amandemen');
+                        var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Terjadi kesalahan.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: msg
+                        });
+                    }
+                });
+            });
+
+            $('.finalize-amendment-btn').on('click', function() {
+                var id = $(this).data('id');
+                
+                Swal.fire({
+                    title: 'Selesaikan Amandemen?',
+                    text: "Project akan dikunci kembali setelah amandemen diselesaikan.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Selesaikan!',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        confirmButton: 'btn btn-success me-2',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '/project-amendments/' + id + '/finalize',
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}'
+                            },
+                            success: function(response) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil',
+                                    text: response.success,
+                                }).then(() => {
+                                    window.location.reload();
+                                });
+                            },
+                            error: function(xhr) {
+                                var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Terjadi kesalahan.';
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: msg
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Edit Project Logic for Show Page
+            var categories = @json($categories);
+            
+            function toggleSubcategory(categoryId, subcategorySelector) {
+                var category = categories.find(c => c.id == categoryId);
+                if (category && category.code && category.code.toUpperCase() === 'P') {
+                    $(subcategorySelector).closest('.col-md-6').hide();
+                    $(subcategorySelector).val('').trigger('change');
+                } else {
+                    $(subcategorySelector).closest('.col-md-6').show();
+                }
+            }
+
+            function formatRupiah(angka) {
+                var number_string = angka.replace(/[^,\d]/g, '').toString(),
+                    split = number_string.split(','),
+                    sisa = split[0].length % 3,
+                    rupiah = split[0].substr(0, sisa),
+                    ribuan = split[0].substr(sisa).match(/\d{3}/gi);
+    
+                if (ribuan) {
+                    separator = sisa ? '.' : '';
+                    rupiah += separator + ribuan.join('.');
+                }
+    
+                rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
+                return rupiah;
+            }
+
+            $('body').on('input', '.rupiah-input', function(e) {
+                $(this).val(formatRupiah($(this).val()));
+            });
+
+            $('#edit_project_categories_id').on('change', function() {
+                toggleSubcategory($(this).val(), '#edit_project_sub_categories_id');
+            });
+
+            $('body').on('click', '.edit-project-btn', function() {
+                var id = $(this).data('id');
+                
+                $.ajax({
+                    url: '/projects/' + id + '/data',
+                    method: 'GET',
+                    success: function(data) {
+                        $('#edit_request_date').val(data.request_date ? data.request_date.split('T')[0] : '');
+                        $('#edit_project_categories_id').val(data.project_categories_id).trigger('change');
+                        $('#edit_project_sub_categories_id').val(data.project_sub_categories_id).trigger('change');
+                        $('#edit_project_name').val(data.project_name);
+                        $('#edit_user_name').val(data.user_name);
+                        $('#edit_user_code').val(data.user_code);
+                        $('#edit_user_address').val(data.user_address);
+                        $('#edit_email').val(data.email);
+                        $('#edit_phone_number').val(data.phone_number);
+                        $('#edit_project_location').val(data.project_location);
+                        $('#edit_project_coordinates').val(data.project_coordinates);
+                        $('#edit_job_type').val(data.job_type);
+                        $('#edit_taxpayer_id').val(data.taxpayer_id);
+                        $('#edit_pic_id').val(data.pic_id).trigger('change');
+                        $('#edit_equipment_rental_rates_hm_id').val(data.equipment_rental_rates_hm_id).trigger('change');
+                        $('#edit_start_date').val(data.start_date ? data.start_date.split('T')[0] : '');
+                        $('#edit_end_date').val(data.end_date ? data.end_date.split('T')[0] : '');
+                        $('#edit_project_value').val(formatRupiah(data.project_value.toString()));
+                        $('#edit_bank_account').val(data.bank_account);
+                        $('#edit_scope_of_work').val(data.scope_of_work);
+                        $('#edit_description').val(data.description);
+                        
+                        toggleSubcategory(data.project_categories_id, '#edit_project_sub_categories_id');
+                        
+                        $('#edit_project_form').attr('action', '/projects/' + id);
+                        $('#edit_project_offcanvas').offcanvas('show');
+                    }
+                });
+            });
+
+            $('#edit_project_form').on('submit', function(e) {
+                e.preventDefault();
+                var form = $(this);
+                var btn = form.find('.btn-submit');
+                var originalText = btn.text();
+                
+                btn.prop('disabled', true);
+                btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: form.attr('method'),
+                    data: form.serialize(),
+                    success: function(response) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: response.success,
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        btn.prop('disabled', false);
+                        btn.text(originalText);
+                        var errorMessage = xhr.responseJSON?.errors ? Object.values(xhr.responseJSON.errors)[0][0] : 'Something went wrong!';
+                        Swal.fire({icon: 'error', title: 'Error', text: errorMessage});
+                    }
+                });
+            });
         });
     </script>
     @endpush

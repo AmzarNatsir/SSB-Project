@@ -1,10 +1,16 @@
 @php
-    $departments = ['PROJECT' => 40, 'WORKSHOP' => 30, 'HSE' => 30];
+    $allWeights = app(\App\Domain\Survey\Services\ScoringEngine::class)->getWeights();
+    // Only show departments that have a weight > 0 in master data
+    $departments = collect($allWeights)
+        ->filter(fn($w) => $w > 0)
+        ->map(fn($w) => $w * 100)
+        ->toArray();
+        
     $canSubmitScore = in_array($survey->status, ['IN_PROGRESS', 'SCORING']);
     $runningTotal = 0;
 @endphp
 
-<div class="card mb-3">
+<div class="card mb-3" id="scoring-section">
     <div class="card-header">
         <h5 class="card-title mb-0">
             <i class="ti ti-calculator me-2"></i>Department Scoring
@@ -30,12 +36,15 @@
                             if ($score) {
                                 $runningTotal += $score->weighted_score;
                             }
+                            // Authorization check
+                            $hasPermission = $deptPermissions[$dept] ?? false;
                         @endphp
                         <tr>
                             <td>
                                 <strong>{{ $dept }}</strong>
+                                <br><small class="text-muted">Assigned: {{ $deptSurveyors[$dept] ?? '-' }}</small>
                                 @if($score)
-                                    <br><small class="text-muted">By: {{ $score->submitter->name ?? '-' }}</small>
+                                    <br><small class="text-muted text-success">Submitted: {{ $score->submitter->name ?? '-' }}</small>
                                 @endif
                             </td>
                             <td><span class="badge bg-secondary">{{ $weight }}%</span></td>
@@ -66,24 +75,41 @@
                             </td>
                             <td>
                                 @if($canSubmitScore && !$score)
-                                    <button class="btn btn-sm btn-outline-primary" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#scoreModal-{{ $dept }}"
-                                        data-dept="{{ $dept }}">
-                                        <i class="ti ti-plus me-1"></i>Submit
-                                    </button>
-                                @elseif($score)
-                                    <div class="d-flex gap-1 justify-content-center">
-                                        <button class="btn btn-sm {{ $canSubmitScore ? 'btn-outline-info' : 'btn-outline-secondary' }}" 
+                                    @if($hasPermission)
+                                        <button class="btn btn-sm btn-outline-primary" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#scoreModal-{{ $dept }}"
                                             data-dept="{{ $dept }}">
-                                            @if($canSubmitScore)
-                                                <i class="ti ti-edit me-1"></i> Edit
-                                            @else
-                                                <i class="ti ti-eye me-1"></i> View
-                                            @endif
+                                            <i class="ti ti-plus me-1"></i>Submit
                                         </button>
+                                    @else
+                                        <button class="btn btn-sm btn-outline-secondary disabled" title="Anda bukan surveyor departemen ini">
+                                            <i class="ti ti-lock me-1"></i>Locked
+                                        </button>
+                                    @endif
+                                @elseif($score)
+                                    <div class="d-flex gap-1 justify-content-center">
+                                        @if($canSubmitScore)
+                                            @if($hasPermission)
+                                                <button class="btn btn-sm btn-outline-info" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#scoreModal-{{ $dept }}"
+                                                    data-dept="{{ $dept }}">
+                                                    <i class="ti ti-edit me-1"></i> Edit
+                                                </button>
+                                            @else
+                                                <button class="btn btn-sm btn-outline-secondary disabled" title="Hanya surveyor yang bisa mengubah">
+                                                    <i class="ti ti-lock me-1"></i> Locked
+                                                </button>
+                                            @endif
+                                        @else
+                                            <button class="btn btn-sm btn-outline-secondary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#scoreModal-{{ $dept }}"
+                                                data-dept="{{ $dept }}">
+                                                <i class="ti ti-eye me-1"></i> View
+                                            </button>
+                                        @endif
                                         <a href="{{ route('project-survey.score-pdf', [$survey->uid, $dept]) }}" target="_blank" class="btn btn-sm btn-outline-danger" title="Print PDF">
                                             <i class="ti ti-file-type-pdf"></i>
                                         </a>

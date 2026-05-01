@@ -93,4 +93,17 @@ class Contract extends Model
             && $this->end_date->isFuture() 
             && $this->end_date->diffInDays(now()) <= $days;
     }
+
+    /**
+     * Check if contract is locked
+     */
+    public function isLocked(): bool
+    {
+        // Jika project sedang dalam status AMENDMENT, contract tidak dikunci
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return false;
+        }
+
+        return $this->status === ContractStatus::ACTIVE;
+    }
 }

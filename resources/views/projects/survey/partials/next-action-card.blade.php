@@ -6,9 +6,15 @@
     $nextAction = $workflowService->getNextAction($survey);
     
     $actionButtons = [];
+    $currentUser = auth()->user();
+    $isSuperAdmin = $currentUser->hasRole('Super Admin');
+    
+    // Check if user has permission for any department (from $deptPermissions passed to view)
+    $authorizedDepts = array_keys(array_filter($deptPermissions ?? [], fn($allowed) => $allowed));
     
     // Define action buttons based on status
     if ($survey->status === 'DRAFT') {
+        // Typically Admin or Project Team can schedule
         $actionButtons[] = [
             'label' => 'Schedule Survey',
             'icon' => 'ti-calendar-event',
@@ -18,39 +24,51 @@
     }
     
     if ($survey->status === 'SURVEY_PLANNED') {
-        $actionButtons[] = [
-            'label' => 'Approve Survey',
-            'icon' => 'ti-check',
-            'class' => 'btn-success',
-            'action' => 'approve-execution'
-        ];
+        // Only Manager can approve execution
+        if ($currentUser->hasAnyRole(['Manager Operation', 'Super Admin'])) {
+            $actionButtons[] = [
+                'label' => 'Approve Survey',
+                'icon' => 'ti-check',
+                'class' => 'btn-success',
+                'action' => 'approve-execution'
+            ];
+        }
     }
     
     if ($survey->status === 'APPROVED_TO_START') {
-        $actionButtons[] = [
-            'label' => 'Start Survey',
-            'icon' => 'ti-play',
-            'class' => 'btn-success',
-            'action' => 'start'
-        ];
+        // Any surveyor or admin can "Start" the survey process
+        if (count($authorizedDepts) > 0 || $isSuperAdmin) {
+            $actionButtons[] = [
+                'label' => 'Start Survey',
+                'icon' => 'ti-play',
+                'class' => 'btn-success',
+                'action' => 'start'
+            ];
+        }
     }
     
     if (in_array($survey->status, ['IN_PROGRESS', 'SCORING'])) {
-        $actionButtons[] = [
-            'label' => 'Submit Department Score',
-            'icon' => 'ti-calculator',
-            'class' => 'btn-success',
-            'modal' => '#scoreModal'
-        ];
+        // Show submit button only if user is authorized for at least one DEPT
+        if (count($authorizedDepts) > 0) {
+            $actionButtons[] = [
+                'label' => 'Submit Department Score',
+                'icon' => 'ti-calculator',
+                'class' => 'btn-success',
+                'modal' => '#scoreModalSelect' // Changing this to a general selector button or logic
+            ];
+        }
     }
     
     if ($survey->status === 'PENDING_APPROVAL') {
-        $actionButtons[] = [
-            'label' => 'Approve Survey',
-            'icon' => 'ti-check',
-            'class' => 'btn-success',
-            'modal' => '#approvalModal'
-        ];
+        // Manager Project or Manager Ops
+        if ($currentUser->hasAnyRole(['Manager Project', 'Manager Operation', 'Super Admin'])) {
+            $actionButtons[] = [
+                'label' => 'Approve Survey Result',
+                'icon' => 'ti-check',
+                'class' => 'btn-success',
+                'modal' => '#approvalModal'
+            ];
+        }
     }
 @endphp
 
@@ -70,11 +88,17 @@
             <div class="d-grid gap-2">
                 @foreach($actionButtons as $button)
                     @if(isset($button['modal']))
-                        <button class="btn {{ $button['class'] }}" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="{{ $button['modal'] }}">
-                            <i class="ti {{ $button['icon'] }} me-2"></i>{{ $button['label'] }}
-                        </button>
+                        @if($button['modal'] === '#scoreModalSelect')
+                            <a href="#scoring-section" class="btn {{ $button['class'] }}">
+                                <i class="ti {{ $button['icon'] }} me-2"></i>{{ $button['label'] }}
+                            </a>
+                        @else
+                            <button class="btn {{ $button['class'] }}" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="{{ $button['modal'] }}">
+                                <i class="ti {{ $button['icon'] }} me-2"></i>{{ $button['label'] }}
+                            </button>
+                        @endif
                     @elseif(isset($button['action']) && $button['action'] === 'start')
                         <form action="{{ route('project-survey.start', $survey->uid) }}" method="POST" id="startSurveyForm">
                             @csrf
@@ -109,7 +133,7 @@
                 <div class="mb-1">
                     <i class="ti ti-calculator fs-20 text-success"></i>
                 </div>
-                <h6 class="mb-0">{{ $survey->scores->count() }}/3</h6>
+                <h6 class="mb-0">{{ $survey->scores->count() }}/{{ \App\Models\SurveyorFlow::active()->count() ?: 3 }}</h6>
                 <small class="text-muted">Scores</small>
             </div>
             <div class="col-4">

@@ -25,6 +25,8 @@ class UpdateBudgetRequest extends FormRequest
             'items.*.units' => ['nullable', 'string', 'max:50'],
             'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
             'items.*.description' => ['nullable', 'string'],
+            'attachments' => ['nullable', 'array'],
+            'attachments.*' => ['nullable', 'file', 'mimes:pdf,doc,docx,xls,xlsx', 'max:10240'],
         ];
     }
 }

@@ -40,13 +40,5 @@ class QuotationItem extends Model
         static::saving(function ($model) {
             $model->total_price = $model->rate * $model->quantity * $model->duration;
         });
-        
-        static::saved(function ($model) {
-            $model->quotation->calculateTotals();
-        });
-        
-        static::deleted(function ($model) {
-            $model->quotation->calculateTotals();
-        });
     }
 }

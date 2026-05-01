@@ -174,6 +174,18 @@ class SurveyListManager {
             </a>
         `;
 
+        // Print PDF button - show only when survey is completed
+        if (row.status === 'COMPLETED') {
+            buttons += `
+                <a href="/project-survey/${row.uid}/report/pdf" 
+                   class="btn btn-sm btn-danger me-1" 
+                   title="Print Survey Report PDF"
+                   target="_blank">
+                    <i class="ti ti-file-type-pdf"></i>
+                </a>
+            `;
+        }
+
         // Add conditional action buttons based on status
         if (row.status === 'DRAFT') {
             buttons += `

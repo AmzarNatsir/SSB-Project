@@ -21,6 +21,11 @@
                 </div>
                 <div class="d-flex my-xl-auto right-content align-items-center flex-wrap gap-2">
                     <div class="mb-2">
+                        <a href="{{ route('project-surveys.summary-excel') }}" class="btn btn-success d-flex align-items-center me-2">
+                            <i class="ti ti-file-spreadsheet me-2"></i>Export Excel
+                        </a>
+                    </div>
+                    <div class="mb-2">
                         <a href="{{ route('project-survey.create') }}" class="btn btn-primary d-flex align-items-center">
                             <i class="ti ti-plus-circle me-2"></i>Initiate New Survey
                         </a>

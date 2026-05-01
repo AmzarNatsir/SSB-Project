@@ -30,6 +30,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('project-survey/{uid}/schedule', [\App\Http\Controllers\ProjectSurveyController::class, 'updateSchedule'])->name('project-survey.schedule');
     Route::post('project-survey/{uid}/score', [\App\Http\Controllers\ProjectSurveyController::class, 'storeScore'])->name('project-survey.score');
     Route::get('project-survey/{uid}/score/{department}/pdf', [\App\Http\Controllers\ProjectSurveyController::class, 'exportDepartmentScorePdf'])->name('project-survey.score-pdf');
+    Route::get('project-survey/{uid}/report/pdf', [\App\Http\Controllers\ProjectSurveyController::class, 'exportAllDepartmentsPdf'])->name('project-survey.report-pdf');
+    Route::get('project-surveys/summary/excel', [\App\Http\Controllers\ProjectSurveyController::class, 'exportSummaryExcel'])->name('project-surveys.summary-excel');
     Route::post('project-survey/{uid}/status', [\App\Http\Controllers\ProjectSurveyController::class, 'updateStatus'])->name('project-survey.status');
     Route::post('project-survey/{uid}/approve-execution', [\App\Http\Controllers\ProjectSurveyController::class, 'approveSurveyExecution'])->name('project-survey.approve-execution');
     Route::post('project-survey/{uid}/reject-execution', [\App\Http\Controllers\ProjectSurveyController::class, 'rejectSurveyExecution'])->name('project-survey.reject-execution');
@@ -46,6 +48,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('projects/{id}/upload-image', [\App\Http\Controllers\ProjectController::class, 'uploadImage'])->name('projects.upload-image');
     Route::delete('project-images/{id}', [\App\Http\Controllers\ProjectController::class, 'deleteImage'])->name('project-images.delete');
     Route::get('storage/projects/{project_id}/{filename}', [\App\Http\Controllers\ProjectController::class, 'serveImage'])->name('projects.serve-image');
+    
+    // Project Amendments
+    Route::post('project-amendments', [\App\Http\Controllers\ProjectAmendmentController::class, 'store'])->name('project-amendments.store');
+    Route::post('project-amendments/{id}/finalize', [\App\Http\Controllers\ProjectAmendmentController::class, 'finalize'])->name('project-amendments.finalize');
     
     // API Routes for Survey Statistics
     Route::prefix('api/v1')->group(function () {
@@ -65,6 +71,11 @@ Route::middleware(['auth'])->group(function () {
     
     // Approval Flows
     Route::resource('approval-flows', \App\Http\Controllers\ApprovalFlowController::class);
+
+    // Surveyor Flows
+    Route::get('surveyor-flows', [\App\Http\Controllers\SurveyorFlowController::class, 'index'])->name('surveyor-flows.index');
+    Route::put('surveyor-flows', [\App\Http\Controllers\SurveyorFlowController::class, 'update'])->name('surveyor-flows.update-all');
+    Route::delete('surveyor-flows/{department}', [\App\Http\Controllers\SurveyorFlowController::class, 'destroy'])->name('surveyor-flows.destroy');
     
     // User Management
     Route::resource('roles-permissions', \App\Http\Controllers\RoleController::class);

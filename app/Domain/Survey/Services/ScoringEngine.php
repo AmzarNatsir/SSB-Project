@@ -3,26 +3,53 @@
 namespace App\Domain\Survey\Services;
 
 use App\Domain\Survey\ValueObjects\FeasibilityResult;
+use App\Models\Scoring;
+use App\Enums\SurveyDepartment;
 
 class ScoringEngine
 {
-    private const WEIGHTS = [
-        'PROJECT' => 0.40,
-        'WORKSHOP' => 0.30,
-        'HSE' => 0.30,
-    ];
-    
     private const FEASIBILITY_THRESHOLD = 70.0;
-    
+
+    /**
+     * Get weights from database mapped to Enum values
+     */
+    public function getWeights(): array
+    {
+        $scoringData = Scoring::all();
+        $weights = [];
+        
+        foreach (SurveyDepartment::cases() as $case) {
+            $found = $scoringData->where('nama_departemen', $case->label())->first();
+            if ($found) {
+                // Bobot in DB is usually 0-100, we need fraction 0.0-1.0
+                $weights[$case->value] = (float)$found->bobot / 100;
+            } else {
+                $weights[$case->value] = 0;
+            }
+        }
+        
+        return $weights;
+    }
+
+    /**
+     * Get weight for a specific department
+     */
+    public function getWeight(string $department): float
+    {
+        $weights = $this->getWeights();
+        return $weights[strtoupper($department)] ?? 0.0;
+    }
+
     /**
      * Calculate total weighted score from department scores
      */
     public function calculateTotalScore(array $departmentScores): float
     {
         $totalScore = 0.0;
+        $weights = $this->getWeights();
         
         foreach ($departmentScores as $department => $score) {
-            $weight = self::WEIGHTS[$department] ?? 0;
+            $weight = $weights[$department] ?? 0;
             $totalScore += $score * $weight;
         }
         
@@ -64,31 +91,19 @@ class ScoringEngine
      */
     public function validateScores(array $scores): bool
     {
-        $requiredDepartments = array_keys(self::WEIGHTS);
-        
-        foreach ($requiredDepartments as $dept) {
-            if (!isset($scores[$dept]) || $scores[$dept] < 0 || $scores[$dept] > 100) {
+        $weights = $this->getWeights();
+        $requiredDepts = array_keys(array_filter($weights, fn($w) => $w > 0));
+
+        foreach ($requiredDepts as $dept) {
+            if (!isset($scores[$dept])) {
+                return false;
+            }
+            if ($scores[$dept] < 0 || $scores[$dept] > 100) {
                 return false;
             }
         }
         
         return true;
-    }
-    
-    /**
-     * Get weight for a specific department
-     */
-    public function getWeight(string $department): float
-    {
-        return self::WEIGHTS[$department] ?? 0.0;
-    }
-    
-    /**
-     * Get all department weights
-     */
-    public function getWeights(): array
-    {
-        return self::WEIGHTS;
     }
     
     /**

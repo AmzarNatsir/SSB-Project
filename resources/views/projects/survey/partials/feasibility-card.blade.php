@@ -57,9 +57,16 @@
                         @endif
                     </button>
                 @else
-                    <button class="btn btn-success flex-fill" onclick="proceedToExecution()">
-                        <i class="ti ti-rocket me-1"></i>Proceed to Execution
-                    </button>
+                    @if(auth()->user()->hasAnyRole(['Admin', 'Super Admin']))
+                        <button class="btn btn-success flex-fill" onclick="proceedToExecution()">
+                            <i class="ti ti-rocket me-1"></i>Proceed to Execution
+                        </button>
+                    @else
+                        <button class="btn btn-outline-secondary flex-fill disabled" title="Only administrators can proceed to execution">
+                            <i class="ti ti-lock me-1"></i>
+                            Waiting for Admin Approval
+                        </button>
+                    @endif
                 @endif
             </div>
         @else

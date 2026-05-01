@@ -54,4 +54,14 @@ class ProjectSurvey extends Model
     {
         return $this->hasMany(ProjectSurveyApproval::class, 'survey_id');
     }
+
+    public function isLocked(): bool
+    {
+        // If project is in AMENDMENT status, unlock for editing
+        if ($this->project && $this->project->project_status === 'AMENDMENT') {
+            return false;
+        }
+
+        return in_array($this->status, ['COMPLETED', 'PROJECT_FEASIBLE']);
+    }
 }

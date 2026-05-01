@@ -19,6 +19,11 @@
                 <a href="{{ route('quotations.pdf', $quotation->uid) }}" target="_blank" class="btn btn-soft-danger btn-label">
                     <i class="ri-file-pdf-fill label-icon align-middle fs-16 me-2"></i> Print PDF
                 </a>
+                @if(!$quotation->isLocked())
+                <a href="{{ route('quotations.edit', $quotation->uid) }}" class="btn btn-warning btn-label">
+                    <i class="ri-edit-line label-icon align-middle fs-16 me-2"></i> Edit
+                </a>
+                @endif
                 <a href="{{ route('quotations.index') }}" class="btn btn-light btn-label">
                     <i class="ri-arrow-left-line label-icon align-middle fs-16 me-2"></i> Back to List
                 </a>

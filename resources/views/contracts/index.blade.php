@@ -117,6 +117,9 @@
                                                     @if($contract->attachment_path)
                                                         <li><a class="dropdown-item" href="{{ Storage::url($contract->attachment_path) }}" target="_blank"><i class="ti ti-file-download me-1"></i> Download File</a></li>
                                                     @endif
+                                                    @if(!$contract->isLocked())
+                                                        <li><a class="dropdown-item" href="{{ route('final-contracts.edit', $contract->uid) }}"><i class="ti ti-edit me-1"></i> Edit Contract</a></li>
+                                                    @endif
                                                 </ul>
                                             </div>
                                         </td>
