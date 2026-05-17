@@ -161,20 +161,27 @@
                 <li class="menu-title"><span>IMPLEMENTATION</span></li>
                 <li>
                     <ul>
-                        <li class="{{ Request::is('workforce-formation*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-users"></i><span>Workforce Formation</span></a></li>
-                        <li class="{{ Request::is('unit-formation*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-car"></i><span>Unit Formation</span></a></li>
-                        <li class="{{ Request::is('timesheet-journal*') ? 'active' : '' }}"><a href="#"><i
+                        <li class="{{ Request::is('workforce-formations*') ? 'active' : '' }}"><a
+                                href="{{ route('workforce-formations.index') }}"><i
+                                    class="ti ti-users"></i><span>SK Penugasan Tim</span></a></li>
+                        <li class="{{ Request::is('unit-formations*') ? 'active' : '' }}"><a
+                                href="{{ route('unit-formations.index') }}"><i
+                                    class="ti ti-truck"></i><span>SK Penetapan Unit</span></a></li>
+                        <li class="{{ Request::is('timesheets*') ? 'active' : '' }}"><a
+                                href="{{ route('timesheets.index') }}"><i
                                     class="ti ti-calendar"></i><span>Timesheet Journal</span></a></li>
-                        <li class="{{ Request::is('work-realization*') ? 'active' : '' }}"><a href="#"><i
+                        <li class="{{ Request::is('work-realizations*') ? 'active' : '' }}"><a
+                                href="{{ route('work-realizations.index') }}"><i
                                     class="ti ti-list"></i><span>Work Realization</span></a></li>
-                        <li class="{{ Request::is('invoice*') ? 'active' : '' }}"><a href="#"><i
+                        <li class="{{ Request::is('invoices*') ? 'active' : '' }}"><a
+                                href="{{ route('invoices.index') }}"><i
                                     class="ti ti-invoice"></i><span>Invoice</span></a></li>
-                        <li class="{{ Request::is('receivables*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-invoice"></i><span>Receivables</span></a></li>
-                        <li class="{{ Request::is('receivables-settlement*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-invoice"></i><span>Receivables Settlement</span></a></li>
+                        <li class="{{ Request::is('receivables') || Request::is('receivables/*') ? 'active' : '' }}"><a
+                                href="{{ route('receivables.index') }}"><i
+                                    class="ti ti-cash"></i><span>Penerimaan Dana</span></a></li>
+                        <li class="{{ Request::is('receivable-settlements*') ? 'active' : '' }}"><a
+                                href="{{ route('receivable-settlements.index') }}"><i
+                                    class="ti ti-arrows-exchange"></i><span>Pelunasan Piutang</span></a></li>
                         <li class="{{ Request::is('project-adjustment') ? 'active' : '' }}"><a href="#"><i
                                     class="ti ti-invoice"></i><span>Project Adjustment</span></a></li>
                     </ul>

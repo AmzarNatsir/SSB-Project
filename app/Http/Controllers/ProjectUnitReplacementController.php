@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\ProjectUnitReplacementStatus;
 use App\Models\Project;
 use App\Models\ProjectUnitReplacement;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectUnitReplacementController extends Controller
 {
+    public function __construct(protected ApprovalFlowService $flowService) {}
+
     /**
      * Display a listing of all PTU records with KPI counts.
      */
@@ -180,6 +183,9 @@ class ProjectUnitReplacementController extends Controller
 
     /**
      * Approve or reject PTU.
+     *
+     * Authorization: only users configured at level 1 of ApprovalFlow code 'UnitReplacement'.
+     * Currently PTU pakai single-step approval — level 1 dianggap final.
      */
     public function approve(Request $request, ProjectUnitReplacement $unitReplacement)
     {
@@ -190,6 +196,17 @@ class ProjectUnitReplacementController extends Controller
 
         if (!$unitReplacement->canApprove()) {
             return back()->with('error', 'Cannot approve/reject in current status.');
+        }
+
+        // Backend guard: pastikan user adalah approver yang dikonfigurasi di matriks
+        $levels = $this->flowService->getLevels('UnitReplacement');
+        if ($levels->isEmpty()) {
+            return back()->with('error', 'Matriks approval untuk PTU belum diatur. Hubungi admin untuk konfigurasi di menu Approval Matrix.');
+        }
+
+        $firstLevel = $levels->first();
+        if (! $this->flowService->isUserApprover(Auth::id(), $firstLevel)) {
+            return back()->with('error', 'Anda tidak memiliki kewenangan untuk approval PTU.');
         }
 
         $newStatus = $request->decision === 'approve'

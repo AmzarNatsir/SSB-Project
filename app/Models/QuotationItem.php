@@ -14,6 +14,7 @@ class QuotationItem extends Model
         'quotation_id',
         'unit_name',
         'unit_id',
+        'uid_unit',
         'rate',
         'quantity',
         'duration',

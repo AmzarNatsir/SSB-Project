@@ -5,12 +5,15 @@ namespace App\Http\Controllers;
 use App\Enums\ProjectUnitReturnStatus;
 use App\Models\Project;
 use App\Models\ProjectUnitReturn;
+use App\Services\ApprovalFlowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectUnitReturnController extends Controller
 {
+    public function __construct(protected ApprovalFlowService $flowService) {}
+
     /**
      * Display a listing of all PPU records.
      */
@@ -170,6 +173,9 @@ class ProjectUnitReturnController extends Controller
 
     /**
      * Approve or reject PPU.
+     *
+     * Authorization: only users configured at level 1 of ApprovalFlow code 'UnitReturn'.
+     * Currently PPU pakai single-step approval — level 1 dianggap final.
      */
     public function approve(Request $request, ProjectUnitReturn $unitReturn)
     {
@@ -180,6 +186,17 @@ class ProjectUnitReturnController extends Controller
 
         if (!$unitReturn->canApprove()) {
             return back()->with('error', 'Cannot approve/reject in current status.');
+        }
+
+        // Backend guard: pastikan user adalah approver yang dikonfigurasi di matriks
+        $levels = $this->flowService->getLevels('UnitReturn');
+        if ($levels->isEmpty()) {
+            return back()->with('error', 'Matriks approval untuk PPU belum diatur. Hubungi admin untuk konfigurasi di menu Approval Matrix.');
+        }
+
+        $firstLevel = $levels->first();
+        if (! $this->flowService->isUserApprover(Auth::id(), $firstLevel)) {
+            return back()->with('error', 'Anda tidak memiliki kewenangan untuk approval PPU.');
         }
 
         $newStatus = $request->decision === 'approve'

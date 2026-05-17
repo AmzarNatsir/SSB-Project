@@ -58,7 +58,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('surveys/stats/dashboard', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'dashboard']);
         Route::get('surveys/{uid}/status', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'status']);
         Route::get('surveys/scores/{id}', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'scoreDetails']);
-        
+
+        // Employee proxy (data dari API_EMPLOYEE) — untuk dropdown Workforce/Unit Formation/Timesheet
+        Route::get('employees/search', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'search'])->name('employees.search');
+        Route::get('employees/{id}', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'show'])->name('employees.show');
+
+        // Unit proxy (data dari API_WORKSHOP) — untuk dropdown Unit Formation/Timesheet
+        Route::get('units/search', [\App\Http\Controllers\Api\V1\UnitController::class, 'search'])->name('units.search');
+        Route::get('units/{id}', [\App\Http\Controllers\Api\V1\UnitController::class, 'show'])->name('units.show');
     });
 
     // Project Budgets
@@ -114,6 +121,67 @@ Route::middleware(['auth'])->group(function () {
     Route::post('unit-replacements/{unitReplacement}/approve', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'approve'])->name('unit-replacements.approve');
     Route::post('unit-replacements/{unitReplacement}/complete', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'complete'])->name('unit-replacements.complete');
     Route::get('unit-replacements/{unitReplacement}/attachment', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'downloadAttachment'])->name('unit-replacements.attachment');
+
+    // Work Realization (agregasi billing per periode)
+    Route::resource('work-realizations', \App\Http\Controllers\WorkRealizationController::class)
+        ->parameters(['work-realizations' => 'workRealization']);
+    Route::post('work-realizations/{workRealization}/submit',     [\App\Http\Controllers\WorkRealizationController::class, 'submit'])->name('work-realizations.submit');
+    Route::post('work-realizations/{workRealization}/approve',    [\App\Http\Controllers\WorkRealizationController::class, 'approve'])->name('work-realizations.approve');
+    Route::post('work-realizations/{workRealization}/regenerate', [\App\Http\Controllers\WorkRealizationController::class, 'regenerate'])->name('work-realizations.regenerate');
+    Route::get('work-realizations/{workRealization}/attachment/{type}', [\App\Http\Controllers\WorkRealizationController::class, 'downloadAttachment'])->name('work-realizations.attachment');
+    Route::get('api/work-realizations/project/{project}/contracts', [\App\Http\Controllers\WorkRealizationController::class, 'projectContracts'])->name('work-realizations.project-contracts');
+
+    // Invoice (tagihan ke customer, generated dari Work Realization Approved)
+    Route::resource('invoices', \App\Http\Controllers\InvoiceController::class);
+    Route::post('invoices/{invoice}/submit',     [\App\Http\Controllers\InvoiceController::class, 'submit'])->name('invoices.submit');
+    Route::post('invoices/{invoice}/approve',    [\App\Http\Controllers\InvoiceController::class, 'approve'])->name('invoices.approve');
+    Route::post('invoices/{invoice}/mark-paid',  [\App\Http\Controllers\InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
+    Route::get('invoices/{invoice}/faktur-pajak', [\App\Http\Controllers\InvoiceController::class, 'downloadFakturPajak'])->name('invoices.faktur-pajak');
+
+    // Receivable (penerimaan dana dari customer: uang muka / pelunasan invoice)
+    Route::resource('receivables', \App\Http\Controllers\ReceivableController::class);
+    Route::post('receivables/{receivable}/submit',  [\App\Http\Controllers\ReceivableController::class, 'submit'])->name('receivables.submit');
+    Route::post('receivables/{receivable}/approve', [\App\Http\Controllers\ReceivableController::class, 'approve'])->name('receivables.approve');
+    Route::get('receivables/{receivable}/attachment', [\App\Http\Controllers\ReceivableController::class, 'downloadAttachment'])->name('receivables.attachment');
+    Route::get('api/receivables/project/{project}/invoices', [\App\Http\Controllers\ReceivableController::class, 'projectInvoices'])->name('receivables.project-invoices');
+
+    // Receivable Settlement (alokasi DP + pembayaran baru untuk melunasi Invoice)
+    Route::resource('receivable-settlements', \App\Http\Controllers\ReceivableSettlementController::class)
+        ->parameters(['receivable-settlements' => 'receivableSettlement']);
+    Route::post('receivable-settlements/{receivableSettlement}/submit',  [\App\Http\Controllers\ReceivableSettlementController::class, 'submit'])->name('receivable-settlements.submit');
+    Route::post('receivable-settlements/{receivableSettlement}/approve', [\App\Http\Controllers\ReceivableSettlementController::class, 'approve'])->name('receivable-settlements.approve');
+    Route::get('receivable-settlements/{receivableSettlement}/attachment', [\App\Http\Controllers\ReceivableSettlementController::class, 'downloadAttachment'])->name('receivable-settlements.attachment');
+    Route::get('api/receivable-settlements/project/{project}/invoices', [\App\Http\Controllers\ReceivableSettlementController::class, 'projectInvoices'])->name('receivable-settlements.project-invoices');
+    Route::get('api/receivable-settlements/project/{project}/deposits', [\App\Http\Controllers\ReceivableSettlementController::class, 'projectDeposits'])->name('receivable-settlements.project-deposits');
+
+    // Timesheet Journal (log harian operasional)
+    Route::resource('timesheets', \App\Http\Controllers\TimesheetController::class)
+        ->parameters(['timesheets' => 'timesheet']);
+    Route::post('timesheets/{timesheet}/submit',  [\App\Http\Controllers\TimesheetController::class, 'submit'])->name('timesheets.submit');
+    Route::post('timesheets/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('timesheets.approve');
+    Route::get('api/timesheets/available-units',  [\App\Http\Controllers\TimesheetController::class, 'availableUnits'])->name('timesheets.available-units');
+
+    // Unit Formation (SK Penetapan Unit & Operator)
+    Route::resource('unit-formations', \App\Http\Controllers\UnitFormationController::class)
+        ->parameters(['unit-formations' => 'unitFormation']);
+    Route::post('unit-formations/{unitFormation}/submit',   [\App\Http\Controllers\UnitFormationController::class, 'submit'])->name('unit-formations.submit');
+    Route::post('unit-formations/{unitFormation}/approve',  [\App\Http\Controllers\UnitFormationController::class, 'approve'])->name('unit-formations.approve');
+    Route::post('unit-formations/{unitFormation}/activate', [\App\Http\Controllers\UnitFormationController::class, 'activate'])->name('unit-formations.activate');
+    Route::post('unit-formations/{unitFormation}/revise',   [\App\Http\Controllers\UnitFormationController::class, 'revise'])->name('unit-formations.revise');
+    Route::post('unit-formations/{unitFormation}/end',      [\App\Http\Controllers\UnitFormationController::class, 'end'])->name('unit-formations.end');
+    Route::get('unit-formations/{unitFormation}/attachment',[\App\Http\Controllers\UnitFormationController::class, 'downloadAttachment'])->name('unit-formations.attachment');
+    Route::get('api/contracts/{contract}/items',            [\App\Http\Controllers\UnitFormationController::class, 'contractItems'])->name('unit-formations.contract-items');
+
+    // Workforce Formation
+    Route::resource('workforce-formations', \App\Http\Controllers\WorkforceFormationController::class)
+        ->parameters(['workforce-formations' => 'workforceFormation']);
+    Route::post('workforce-formations/{workforceFormation}/submit',   [\App\Http\Controllers\WorkforceFormationController::class, 'submit'])->name('workforce-formations.submit');
+    Route::post('workforce-formations/{workforceFormation}/approve',  [\App\Http\Controllers\WorkforceFormationController::class, 'approve'])->name('workforce-formations.approve');
+    Route::post('workforce-formations/{workforceFormation}/activate', [\App\Http\Controllers\WorkforceFormationController::class, 'activate'])->name('workforce-formations.activate');
+    Route::post('workforce-formations/{workforceFormation}/revise',   [\App\Http\Controllers\WorkforceFormationController::class, 'revise'])->name('workforce-formations.revise');
+    Route::post('workforce-formations/{workforceFormation}/end',      [\App\Http\Controllers\WorkforceFormationController::class, 'end'])->name('workforce-formations.end');
+    Route::get('workforce-formations/{workforceFormation}/attachment',[\App\Http\Controllers\WorkforceFormationController::class, 'downloadAttachment'])->name('workforce-formations.attachment');
+    Route::get('api/projects/{project}/active-contracts',             [\App\Http\Controllers\WorkforceFormationController::class, 'projectContracts'])->name('workforce-formations.project-contracts');
 
     // Unit Returns (PPU)
     Route::resource('unit-returns', \App\Http\Controllers\ProjectUnitReturnController::class)->parameters(['unit-returns' => 'unitReturn']);

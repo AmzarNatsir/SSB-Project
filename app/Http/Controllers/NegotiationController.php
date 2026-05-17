@@ -61,11 +61,23 @@ class NegotiationController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        // Defense in depth: cek user yang login adalah approver yang dikonfigurasi di matriks
+        if ($negotiation->status !== NegotiationStatus::SUBMITTED || $negotiation->current_approval_level <= 0) {
+            return back()->with('error', 'Negosiasi tidak dalam status yang bisa di-approve.');
+        }
+
+        $levels = $this->flowService->getLevels('NEGOTIATION');
+        $currentLevel = $levels->where('level_number', $negotiation->current_approval_level)->first();
+
+        if (! $currentLevel || ! $this->flowService->isUserApprover(auth()->id(), $currentLevel)) {
+            return back()->with('error', 'Anda tidak memiliki kewenangan untuk approval di level ini.');
+        }
+
         try {
             $this->service->processApproval(
-                $negotiation->uid, 
-                auth()->id(), 
-                $validated['decision'], 
+                $negotiation->uid,
+                auth()->id(),
+                $validated['decision'],
                 $validated['notes']
             );
             return back()->with('success', 'Decision recorded.');

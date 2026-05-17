@@ -116,8 +116,8 @@ class ProjectController extends Controller
     public function show(string $id)
     {
         $project = Project::with([
-                'category', 'subCategory', 'pic', 'equipmentRentalRate', 'images', 
-                'surveys', 'latest_budget.items', 'latest_quotation.items', 
+                'category', 'subCategory', 'pic', 'equipmentRentalRate', 'images',
+                'surveys', 'latest_budget.items', 'latest_quotation.items',
                 'latest_negotiation.rounds',
                 'contracts' => function ($query) {
                     $query->where('status', \App\Enums\ContractStatus::ACTIVE)->with('items');
@@ -128,13 +128,38 @@ class ProjectController extends Controller
             ])
             ->where('uid', $id)
             ->firstOrFail();
-        
+
         $categories = ProjectCategory::all();
         $subCategories = ProjectSubCategory::all();
         $users = User::all();
         $equipmentRates = EquimentRentalRatesHM::all();
-        
-        return view('projects.show', compact('project', 'categories', 'subCategories', 'users', 'equipmentRates'));
+
+        // SK Penugasan Tim (Workforce Formation) yang aktif untuk project ini.
+        $workforceFormations = \App\Models\WorkforceFormation::with([
+                'contract:id,contract_number,start_date,end_date',
+                'creator:id,name',
+                'members' => fn ($q) => $q->where('is_active', true)
+                                           ->orderBy('position_name')
+                                           ->orderBy('employee_name'),
+            ])
+            ->where('project_id', $project->id)
+            ->where('status', \App\Enums\WorkforceFormationStatus::ACTIVE)
+            ->latest('effective_date')
+            ->get();
+
+        // SK Penetapan Unit yang aktif untuk project ini.
+        $unitFormations = \App\Models\UnitFormation::with([
+                'contract:id,contract_number,start_date,end_date',
+                'creator:id,name',
+                'items' => fn ($q) => $q->whereIn('status', ['READY', 'ACTIVE'])
+                                         ->orderBy('unit_name'),
+            ])
+            ->where('project_id', $project->id)
+            ->where('status', \App\Enums\UnitFormationStatus::ACTIVE)
+            ->latest('effective_date')
+            ->get();
+
+        return view('projects.show', compact('project', 'categories', 'subCategories', 'users', 'equipmentRates', 'workforceFormations', 'unitFormations'));
     }
 
     /**

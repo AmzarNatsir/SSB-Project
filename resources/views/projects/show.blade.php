@@ -943,14 +943,111 @@
                         @endif
 
                         <!-- Units Tab -->
-                        @if($project->unitRequests->isNotEmpty())
+                        @if($project->unitRequests->isNotEmpty() || $unitFormations->isNotEmpty())
                         <div class="tab-pane fade" id="units" role="tabpanel">
                             <div class="row">
                                 <div class="col-lg-12">
+                                    {{-- SK Penetapan Unit (Unit Formation) yang aktif --}}
+                                    @if($unitFormations->isNotEmpty())
+                                    <div class="card shadow-sm border-0 mb-4">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                                <i class="ti ti-clipboard-check me-2 text-primary"></i>SK Penetapan Unit Aktif
+                                                @php $totalUnits = $unitFormations->sum(fn($f) => $f->items->count()); @endphp
+                                                <span class="badge bg-success-subtle text-success ms-2">{{ $totalUnits }} unit</span>
+                                            </h5>
+                                            <a href="{{ route('unit-formations.create') }}?project_id={{ $project->id }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-plus me-1"></i> Buat SK Baru
+                                            </a>
+                                        </div>
+                                        <div class="card-body">
+                                            @foreach($unitFormations as $formation)
+                                                <div class="border rounded mb-3">
+                                                    <div class="d-flex align-items-center justify-content-between p-3 bg-light border-bottom flex-wrap gap-2">
+                                                        <div>
+                                                            <a href="{{ route('unit-formations.show', $formation->uid) }}" class="fw-semibold link-primary">
+                                                                <i class="ti ti-file-text me-1"></i> {{ $formation->formation_number }}
+                                                            </a>
+                                                            <span class="badge bg-{{ $formation->status->color() }}-subtle text-{{ $formation->status->color() }} ms-2">
+                                                                {{ $formation->status->label() }}
+                                                            </span>
+                                                            <div class="small text-muted mt-1">
+                                                                <i class="ti ti-calendar me-1"></i>
+                                                                Berlaku {{ $formation->effective_date?->format('d M Y') }}
+                                                                @if($formation->end_date)
+                                                                    s/d {{ $formation->end_date->format('d M Y') }}
+                                                                @else
+                                                                    s/d {{ $formation->contract->end_date?->format('d M Y') ?? '-' }} <span class="text-muted">(ikut kontrak)</span>
+                                                                @endif
+                                                                @if($formation->contract)
+                                                                    &middot; Kontrak: <span class="text-dark">{{ $formation->contract->contract_number }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-muted small text-end">
+                                                            <div><i class="ti ti-user me-1"></i>Dibuat oleh: {{ $formation->creator->name ?? '-' }}</div>
+                                                            <div>{{ $formation->items->count() }} unit aktif</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="text-muted small text-uppercase bg-white">
+                                                                <tr>
+                                                                    <th style="width:40px">#</th>
+                                                                    <th>Unit</th>
+                                                                    <th>Operator</th>
+                                                                    <th class="text-end">HM Awal</th>
+                                                                    <th class="text-end">Target/Bulan</th>
+                                                                    <th>Status</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @forelse($formation->items as $idx => $item)
+                                                                    <tr>
+                                                                        <td class="text-muted">{{ $idx + 1 }}</td>
+                                                                        <td>
+                                                                            <div class="fw-medium">{{ $item->unit_name }}</div>
+                                                                            @if($item->equipment_code)
+                                                                                <div class="small text-muted">{{ $item->equipment_code }}</div>
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>{{ $item->operator_name ?? '—' }}</td>
+                                                                        <td class="text-end">{{ number_format($item->hm_start, 0, ',', '.') }} HM</td>
+                                                                        <td class="text-end">
+                                                                            @if($item->hm_target_monthly)
+                                                                                {{ number_format($item->hm_target_monthly, 0, ',', '.') }} HM
+                                                                            @else
+                                                                                —
+                                                                            @endif
+                                                                        </td>
+                                                                        <td>
+                                                                            @php
+                                                                                $sBadge = match($item->status) {
+                                                                                    'ACTIVE' => 'success', 'DOWN' => 'danger',
+                                                                                    'READY' => 'secondary', default => 'light',
+                                                                                };
+                                                                            @endphp
+                                                                            <span class="badge bg-{{ $sBadge }}-subtle text-{{ $sBadge }}">{{ $item->status }}</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                @empty
+                                                                    <tr><td colspan="6" class="text-center text-muted py-3">Tidak ada unit aktif.</td></tr>
+                                                                @endforelse
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
+
+                                    {{-- Deployed Units (dari Unit Request) --}}
+                                    @if($project->unitRequests->isNotEmpty())
                                     <div class="card shadow-sm border-0 mb-4">
                                         <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
                                             <h5 class="card-title mb-0 d-flex align-items-center">
-                                                <i class="ti ti-truck me-2 text-primary"></i>Deployed Units
+                                                <i class="ti ti-truck me-2 text-primary"></i>Deployed Units <small class="text-muted ms-2">(dari Unit Request)</small>
                                             </h5>
                                         </div>
                                         <div class="card-body">
@@ -1004,6 +1101,7 @@
                                             @endforeach
                                         </div>
                                     </div>
+                                    @endif {{-- end @if($project->unitRequests->isNotEmpty()) inner --}}
                                 </div>
                             </div>
                         </div>
@@ -1014,13 +1112,108 @@
                             <div class="row">
                                 <div class="col-lg-12">
                                     <div class="card shadow-sm border-0 mb-4">
-                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
+                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
                                             <h5 class="card-title mb-0 d-flex align-items-center">
                                                 <i class="ti ti-users me-2 text-primary"></i>Work Force
+                                                @php
+                                                    $totalActiveMembers = $workforceFormations->sum(fn($f) => $f->members->count());
+                                                @endphp
+                                                <span class="badge bg-success-subtle text-success ms-2">{{ $totalActiveMembers }} aktif</span>
                                             </h5>
+                                            <a href="{{ route('workforce-formations.create') }}?project_id={{ $project->id }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="ti ti-plus me-1"></i> Buat SK Baru
+                                            </a>
                                         </div>
                                         <div class="card-body">
-                                            List Work Force in project
+                                            @forelse($workforceFormations as $formation)
+                                                <div class="border rounded mb-3">
+                                                    <div class="d-flex align-items-center justify-content-between p-3 bg-light border-bottom flex-wrap gap-2">
+                                                        <div>
+                                                            <a href="{{ route('workforce-formations.show', $formation->uid) }}" class="fw-semibold link-primary">
+                                                                <i class="ti ti-file-text me-1"></i> {{ $formation->formation_number }}
+                                                            </a>
+                                                            <span class="badge bg-{{ $formation->status->color() }}-subtle text-{{ $formation->status->color() }} ms-2">
+                                                                {{ $formation->status->label() }}
+                                                            </span>
+                                                            <div class="small text-muted mt-1">
+                                                                <i class="ti ti-calendar me-1"></i>
+                                                                Berlaku {{ $formation->effective_date?->format('d M Y') }}
+                                                                @if($formation->end_date)
+                                                                    s/d {{ $formation->end_date->format('d M Y') }}
+                                                                @else
+                                                                    s/d {{ $formation->contract->end_date?->format('d M Y') ?? '-' }} <span class="text-muted">(ikut kontrak)</span>
+                                                                @endif
+                                                                @if($formation->contract)
+                                                                    &middot; Kontrak: <span class="text-dark">{{ $formation->contract->contract_number }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-muted small text-end">
+                                                            <div><i class="ti ti-user me-1"></i>Dibuat oleh: {{ $formation->creator->name ?? '-' }}</div>
+                                                            <div>{{ $formation->members->count() }} anggota aktif</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm align-middle mb-0">
+                                                            <thead class="text-muted small text-uppercase bg-white">
+                                                                <tr>
+                                                                    <th style="width:40px">#</th>
+                                                                    <th>Karyawan</th>
+                                                                    <th>Posisi</th>
+                                                                    <th>Shift</th>
+                                                                    <th class="text-end">Upah Harian</th>
+                                                                    <th class="text-end">Tunjangan</th>
+                                                                    <th>Masa Tugas</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @forelse($formation->members as $idx => $m)
+                                                                    <tr>
+                                                                        <td class="text-muted">{{ $idx + 1 }}</td>
+                                                                        <td>
+                                                                            <div class="fw-medium">{{ $m->employee_name }}</div>
+                                                                            <div class="small text-muted">ID: {{ $m->employee_id }}</div>
+                                                                        </td>
+                                                                        <td>{{ $m->position_name }}</td>
+                                                                        <td>
+                                                                            <span class="badge bg-light text-dark">{{ $m->shift }}</span>
+                                                                        </td>
+                                                                        <td class="text-end">Rp {{ number_format($m->daily_rate, 0, ',', '.') }}</td>
+                                                                        <td class="text-end">Rp {{ number_format($m->allowance, 0, ',', '.') }}</td>
+                                                                        <td class="small">
+                                                                            {{ $m->start_date?->format('d M Y') ?? '-' }}
+                                                                            @if($m->end_date)
+                                                                                <br>s/d {{ $m->end_date->format('d M Y') }}
+                                                                            @endif
+                                                                        </td>
+                                                                    </tr>
+                                                                @empty
+                                                                    <tr>
+                                                                        <td colspan="7" class="text-center text-muted py-3">Tidak ada anggota aktif di SK ini.</td>
+                                                                    </tr>
+                                                                @endforelse
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            @empty
+                                                <div class="text-center py-5">
+                                                    <div class="avatar-lg mx-auto mb-3">
+                                                        <div class="avatar-title bg-light rounded-circle text-muted fs-1">
+                                                            <i class="ti ti-users-group"></i>
+                                                        </div>
+                                                    </div>
+                                                    <h6 class="mb-1">Belum Ada Tim Aktif</h6>
+                                                    <p class="text-muted small mb-3">
+                                                        Proyek ini belum memiliki SK Penugasan Tim aktif. SK harus berstatus
+                                                        <span class="badge bg-success-subtle text-success">Aktif</span>
+                                                        agar muncul di sini.
+                                                    </p>
+                                                    <a href="{{ route('workforce-formations.create') }}?project_id={{ $project->id }}" class="btn btn-sm btn-primary">
+                                                        <i class="ti ti-plus me-1"></i> Buat SK Penugasan Tim
+                                                    </a>
+                                                </div>
+                                            @endforelse
                                         </div>
                                     </div>
                                 </div>

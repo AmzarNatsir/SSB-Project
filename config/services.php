@@ -38,6 +38,14 @@ return [
     'workshop' => [
         'api_url' => env('API_WORKSHOP', 'http://localhost:8000/api/'),
         'api_token' => env('WORKSHOP_API_TOKEN'),
+        'cache_ttl' => env('WORKSHOP_API_CACHE_TTL', 120), // seconds
+    ],
+
+    'employee' => [
+        'api_url' => env('API_EMPLOYEE'),
+        'api_token' => env('TOKEN_EMPLOYEE'),
+        'cache_ttl' => env('EMPLOYEE_API_CACHE_TTL', 300), // seconds
+        'timeout' => env('EMPLOYEE_API_TIMEOUT', 20),       // seconds
     ],
 
 ];

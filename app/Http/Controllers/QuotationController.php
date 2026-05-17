@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Quotation;
 use App\Models\Project;
 use App\Services\QuotationService;
+use App\Services\WorkshopApiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class QuotationController extends Controller
 {
@@ -24,10 +24,10 @@ class QuotationController extends Controller
         $quotations = Quotation::with(['project', 'budget'])
             ->latest()
             ->paginate(10);
-            
+
         // Resolve current approvers for the current page
         $levels = $this->flowService->getLevels('QUOTATION');
-        
+
         $quotations->getCollection()->transform(function ($quote) use ($levels) {
             $currentApprover = '-';
             if ($quote->status === 'SUBMITTED' && $quote->current_approval_level > 0) {
@@ -73,7 +73,7 @@ class QuotationController extends Controller
             return redirect()->route('quotations.show', $quotation->uid)->with('error', 'Quotation is locked and cannot be edited.');
         }
 
-        $projects = Project::whereHas('latest_budget', function($q) {
+        $projects = Project::whereHas('latest_budget', function ($q) {
             $q->where('status', \App\Enums\BudgetStatus::BASELINE_APPROVED);
         })->get();
 
@@ -87,6 +87,8 @@ class QuotationController extends Controller
             'project_budget_id' => 'nullable|exists:project_budgets,id',
             'items' => 'required|array',
             'items.*.unit_name' => 'required|string',
+            'items.*.unit_id' => 'nullable',
+            'items.*.uid_unit' => 'nullable|string',
             'items.*.rate' => 'required|numeric',
             'items.*.quantity' => 'required|numeric',
             'items.*.duration' => 'required|numeric',
@@ -104,14 +106,14 @@ class QuotationController extends Controller
     public function show(Quotation $quotation)
     {
         $quotation->load(['items', 'project', 'budget', 'approvals.approver', 'creator']);
-        
+
         $currentApprover = null;
         $canApprove = false;
 
         if ($quotation->status === 'SUBMITTED' && $quotation->current_approval_level > 0) {
             $levels = $this->flowService->getLevels('QUOTATION');
             $level = $levels->where('level_number', $quotation->current_approval_level)->first();
-            
+
             if ($level) {
                 // Determine display label
                 if ($level->approver_type->value === 'ROLE') {
@@ -143,15 +145,15 @@ class QuotationController extends Controller
             // Re-verify authorization on server side
             $levels = $this->flowService->getLevels('QUOTATION');
             $level = $levels->where('level_number', $quotation->current_approval_level)->first();
-            
+
             if (!$level || !$this->flowService->isUserApprover(auth()->id(), $level, $quotation)) {
                 return back()->with('error', 'Unauthorized. You are not the approver for the current level.');
             }
 
             $this->service->processApproval(
-                $quotation, 
-                auth()->id(), 
-                $validated['decision'], 
+                $quotation,
+                auth()->id(),
+                $validated['decision'],
                 $validated['notes']
             );
             return back()->with('success', 'Decision recorded successfully.');
@@ -159,7 +161,7 @@ class QuotationController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
-    
+
     public function update(Request $request, Quotation $quotation)
     {
         $validated = $request->validate([
@@ -169,7 +171,7 @@ class QuotationController extends Controller
         // Flexible update for Wizard steps
         $data = $request->all();
         $this->service->update($quotation, $data);
-        
+
         return response()->json(['message' => 'Saved', 'quotation' => $quotation]);
     }
 
@@ -182,44 +184,17 @@ class QuotationController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
-    
+
     public function pdf(Quotation $quotation)
     {
         $pdf = $this->service->generatePdf($quotation);
         return $pdf->stream("Quote-{$quotation->uid}.pdf");
     }
-    
-    // Proxy for Units API to avoid CORS if frontend calls direct
-    public function getUnits()
-    {
-        $apiUrl = config('services.workshop.api_url');
-        $token = config('services.workshop.api_token');
-        $endpoint = rtrim($apiUrl, '/') . '/units';
-        
-        try {
-            $request = Http::timeout(5);
-            
-            if ($token) {
-                $request->withToken($token);
-            }
-            
-            $response = $request->get($endpoint);
-            
-            if ($response->successful()) {
-                return $response->json();
-            }
-            
-            return response()->json([
-                'error' => 'External API error',
-                'status' => $response->status(),
-                'details' => $response->body()
-            ], $response->status());
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Connection failed',
-                'message' => $e->getMessage()
-            ], 500);
-        }
+    // Proxy for Units API to avoid CORS if frontend calls direct.
+    // Frontend di create.blade.php sudah handle baik flat array maupun { data: [...] }.
+    public function getUnits(WorkshopApiService $workshop)
+    {
+        return response()->json(['data' => $workshop->all()]);
     }
 }

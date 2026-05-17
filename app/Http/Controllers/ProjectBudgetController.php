@@ -8,6 +8,7 @@ use App\Http\Requests\Budget\StoreBudgetRequest;
 use App\Http\Requests\Budget\SubmitBudgetRequest;
 use App\Http\Requests\Budget\UpdateBudgetRequest;
 use App\Models\ProjectBudget;
+use App\Services\ApprovalFlowService;
 use App\Services\ProjectBudgetService;
 use App\Repositories\Interfaces\IProjectBudgetRepository;
 use Illuminate\Http\Request;
@@ -19,11 +20,13 @@ class ProjectBudgetController extends Controller
 {
     protected $budgetService;
     protected $budgetRepo;
+    protected $flowService;
 
-    public function __construct(ProjectBudgetService $budgetService, IProjectBudgetRepository $budgetRepo)
+    public function __construct(ProjectBudgetService $budgetService, IProjectBudgetRepository $budgetRepo, ApprovalFlowService $flowService)
     {
         $this->budgetService = $budgetService;
         $this->budgetRepo = $budgetRepo;
+        $this->flowService = $flowService;
     }
 
     public function index(Request $request)
@@ -194,6 +197,25 @@ class ProjectBudgetController extends Controller
         $budget = $this->budgetRepo->getByUid($uid);
         if (!$budget)
             return response()->json(['message' => 'Not found'], 404);
+
+        // Backend guard: pastikan user yang login adalah approver yang dikonfigurasi
+        // di matriks (ApprovalFlow code 'PROJECT_BUDGET') untuk level saat ini.
+        if ($budget->current_approval_level <= 0) {
+            return response()->json(['message' => 'Budget is not in an approvable state.'], 422);
+        }
+
+        $levels = $this->flowService->getLevels('PROJECT_BUDGET');
+        $currentLevel = $levels->where('level_number', $budget->current_approval_level)->first();
+
+        if (! $currentLevel) {
+            return response()->json(['message' => 'Konfigurasi approval level tidak ditemukan.'], 422);
+        }
+
+        if (! $this->flowService->isUserApprover(auth()->id(), $currentLevel)) {
+            return response()->json([
+                'message' => 'Anda tidak memiliki kewenangan untuk approval di level ini.',
+            ], 403);
+        }
 
         $budget = $this->budgetService->processApproval(
             $budget->id,

@@ -6,73 +6,57 @@
 
 @push('styles')
 <style>
-    /* Fix Table Select2 Width - Only target the input container */
+    /* ===== Select2 - Unit Dropdown in Table ===== */
     #items_table .select2-container {
         width: 100% !important;
-        min-width: 160px; /* Ensure a decent width */
+        min-width: 200px;
     }
-    /* Select2 Selection Styling */
-    .select2-container .select2-selection--single {
-        height: 38px !important;
-        border: 1px solid #dee2e6 !important;
+
+    /* Selection Box */
+    #items_table .select2-container .select2-selection--single {
+        height: 36px !important;
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        background-color: #fff !important;
         display: flex !important;
         align-items: center !important;
-        background-color: #fff !important;
-        border-radius: 6px !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
-    .select2-container--default .select2-selection--single .select2-selection__arrow {
-        height: 36px !important;
-        top: 1px !important;
-    }
-    .select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: 36px !important;
-        padding-left: 12px !important;
-        color: #495057 !important;
-    }
-    /* Select2 Dropdown & Search Styling */
-    .select2-dropdown {
-        border: 1px solid #e9ebec !important;
-        box-shadow: 0 5px 10px rgba(30, 32, 37, 0.12) !important;
-        z-index: 9999 !important;
-        border-radius: 6px !important;
-        background-color: #fff !important;
-        width: auto !important;
-        min-width: 100% !important;
-    }
-    .select2-container--open {
-        z-index: 9999 !important;
-    }
-    .select2-search--dropdown {
-        padding: 8px !important;
-        background-color: #fff !important;
-    }
-    .select2-search--dropdown .select2-search__field {
-        border: 1px solid #dee2e6 !important;
-        border-radius: 4px !important;
-        padding: 6px 10px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+    #items_table .select2-container--focus .select2-selection--single,
+    #items_table .select2-container--open .select2-selection--single {
+        border-color: #405189 !important;
+        box-shadow: 0 0 0 0.2rem rgba(64, 81, 137, 0.15) !important;
         outline: none !important;
     }
-    .select2-results__options {
-        max-height: 250px !important;
-        overflow-y: auto !important;
+    #items_table .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 34px !important;
+        padding-left: 10px !important;
+        padding-right: 30px !important;
+        color: #495057 !important;
+        font-size: 0.875rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
-    .select2-results__option {
-        padding: 8px 12px !important;
+    #items_table .select2-container--default .select2-selection--single .select2-selection__placeholder {
+        color: #9aa2b1 !important;
     }
-    .select2-container--default .select2-results__option--highlighted[aria-selected] {
-        background-color: #405189 !important;
-        color: #fff !important;
+    #items_table .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 34px !important;
+        top: 1px !important;
+        right: 6px !important;
     }
-    /* Horizontal Scrolling for Table */
-    .table-responsive {
-        overflow-x: auto !important;
-        overflow-y: visible !important;
-        -webkit-overflow-scrolling: touch;
-        padding-bottom: 50px;
+
+    /* Allow table-responsive to show the dropdown (overflow visible) */
+    #step2 .table-responsive {
+        overflow: visible !important;
     }
-    /* Critical: Hide the original select that gets styled by Bootstrap/Theme */
+    /* But keep the table itself scrollable on small screens using wrapper trick */
+    #step2 .table-scroll-wrapper {
+        overflow-x: auto;
+    }
+
+    /* Hide original select replaced by Select2 */
     select.select2-hidden-accessible {
         position: absolute !important;
         width: 1px !important;
@@ -83,6 +67,81 @@
         clip: rect(0,0,0,0) !important;
         border: 0 !important;
         visibility: hidden !important;
+    }
+
+    /* ===== Global Select2 Dropdown Panel ===== */
+    .select2-dropdown {
+        border: 1px solid #ced4da !important;
+        border-radius: 6px !important;
+        box-shadow: 0 4px 16px rgba(30, 32, 37, 0.15) !important;
+        background-color: #fff !important;
+        z-index: 2000 !important;
+    }
+    .select2-container--open {
+        z-index: 2000 !important;
+    }
+    /* Unit dropdown: restricted width */
+    .unit-select-dropdown {
+        min-width: 250px !important;
+        max-width: 450px !important;
+    }
+    
+    /* Ensure the Select2 container itself doesn't cause overflow issues */
+    .select2-container {
+        display: block;
+        width: 100% !important;
+    }
+    .select2-container--default .select2-selection--single {
+        height: 38px !important;
+        border: 1px solid #ced4da !important;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Search field inside dropdown */
+    .select2-search--dropdown {
+        padding: 8px 10px !important;
+        border-bottom: 1px solid #f3f6f9 !important;
+        background: #f8f9fa !important;
+    }
+    .select2-search--dropdown .select2-search__field {
+        border: 1px solid #ced4da !important;
+        border-radius: 5px !important;
+        padding: 6px 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 0.8125rem !important;
+        color: #495057 !important;
+        outline: none !important;
+        background-color: #fff !important;
+    }
+    .select2-search--dropdown .select2-search__field:focus {
+        border-color: #405189 !important;
+        box-shadow: 0 0 0 0.15rem rgba(64,81,137,0.15) !important;
+    }
+
+    /* Options list */
+    .select2-results__options {
+        max-height: 220px !important;
+        overflow-y: auto !important;
+        padding: 4px 0 !important;
+    }
+    .select2-results__option {
+        padding: 8px 14px !important;
+        font-size: 0.875rem !important;
+        color: #495057 !important;
+        cursor: pointer;
+        transition: background-color 0.12s ease, color 0.12s ease;
+    }
+    .select2-container--default .select2-results__option--highlighted[aria-selected],
+    .select2-container--default .select2-results__option--highlighted[data-selected] {
+        background-color: #405189 !important;
+        color: #fff !important;
+    }
+    .select2-container--default .select2-results__option[aria-selected=true] {
+        background-color: #eef0f7 !important;
+        color: #405189 !important;
+        font-weight: 500;
     }
 </style>
 @endpush
@@ -311,7 +370,7 @@
                                                         @endforeach
                                                     </select>
                                                 @else
-                                                    <select class="form-select" id="project_id" name="project_id" required>
+                                                    <select class="form-select" id="project_id" name="project_id" data-toggle="select2" data-placeholder="Select Project..." required>
                                                         <option value="">Select Project...</option>
                                                         @foreach($projects as $project)
                                                             @php $budget = $project->latest_budget; @endphp
@@ -433,8 +492,8 @@
                                                 </button>
                                             </div>
                                             
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered align-middle" id="items_table">
+                                            <div class="table-responsive" style="overflow: visible;">
+                                                <table class="table table-bordered align-middle" id="items_table" style="z-index: 1050;">
                                                     <thead class="table-light">
                                                         <tr>
                                                             <th width="30%">Unit/Equipment</th>
@@ -597,10 +656,11 @@
 <template id="item_row_template">
     <tr>
         <td>
-            <select class="item-unit-select-init select2" name="items[{index}][unit_name]" required>
+            <select class="item-unit-select-init" name="items[{index}][unit_name]" data-toggle="select2" data-placeholder="Select Unit" required>
                 <option value="">Select Unit</option>
             </select>
             <input type="hidden" name="items[{index}][unit_id]" class="item-unit-id">
+            <input type="hidden" name="items[{index}][uid_unit]" class="item-unit-uid">
         </td>
         <td>
             <input type="text" class="form-control item-rate" name="items[{index}][rate]" placeholder="0" required>
@@ -835,70 +895,113 @@
 
         function addItemRow(data = null) {
             console.log('addItemRow called with data:', data);
+            
             var index = $('#items_table tbody tr').length;
             var template = $('#item_row_template').html().replace(/{index}/g, index);
-            var row = $(template);
+            var $row = $(template);
             
-            var select = row.find('.item-unit-select-init');
-            if (unitsData.length > 0) {
+            // Append row to table
+            $('#items_table tbody').append($row);
+            
+            var $select = $row.find('.item-unit-select-init');
+            
+            // Safely populate options
+            $select.empty().append('<option value="">Select Unit</option>');
+            if (typeof unitsData !== 'undefined' && Array.isArray(unitsData) && unitsData.length > 0) {
                 unitsData.forEach(function(u) {
-                    var selected = (data && data.unit_name === u.name) ? 'selected' : '';
-                    select.append(new Option(u.name, u.name, false, selected === 'selected'));
+                    var isSelected = (data && data.unit_name === u.name);
+                    $select.append(new Option(u.name, u.name, false, isSelected));
                 });
-            } else if (data) {
-                select.append(new Option(data.unit_name, data.unit_name, true, true));
+            } else if (data && data.unit_name) {
+                $select.append(new Option(data.unit_name, data.unit_name, true, true));
             }
             
             if (data) {
-                row.find('.item-rate').val(formatNumberID(data.rate));
-                row.find('.item-qty').val(data.quantity);
-                row.find('.item-duration').val(data.duration);
+                $row.find('.item-rate').val(formatNumberID(data.rate));
+                $row.find('.item-qty').val(data.quantity);
+                $row.find('.item-duration').val(data.duration);
+                $row.find('.item-unit-id').val(data.unit_id || '');
+                $row.find('.item-unit-uid').val(data.uid_unit || '');
             }
             
-            $('#items_table tbody').append(row);
+            // Re-calculate row once
+            calculateRow($row);
             
-            // Initialize Select2
+            // Initialize Select2 after a safe delay
             setTimeout(function() {
-                var s2 = row.find('.item-unit-select-init').select2({
-                    dropdownParent: row.closest('.table-responsive'),
-                    placeholder: "Select Unit",
-                    width: '100%',
-                    dropdownAutoWidth: true
-                });
-                
-                if (data) {
-                    s2.val(data.unit_name).trigger('change.select2');
+                if (typeof $.fn.select2 === 'function') {
+                    console.log('Force Initializing Select2 for row', index);
+                    $select.select2({
+                        placeholder: "Pilih Unit / Peralatan",
+                        width: '100%',
+                        allowClear: true
+                    });
+                    
+                    if (data && data.unit_name) {
+                        $select.val(data.unit_name).trigger('change.select2');
+                    }
+                } else {
+                    console.error('Select2 library is not available during addItemRow');
+                }
+            }, 300);
+
+            // Listeners for Select2
+            $select.on('select2:select', function(e) {
+                var selectedValue = e.params.data.id;
+                var isDuplicate = false;
+                var currentSelect = $(this);
+
+                // Find the unit data to get the ID and UID
+                var selectedUnit = unitsData.find(u => u.name === selectedValue);
+                if (selectedUnit) {
+                    $row.find('.item-unit-id').val(selectedUnit.id);
+                    $row.find('.item-unit-uid').val(selectedUnit.uid);
                 }
 
-                s2.on('select2:select', function(e) {
-                    var selectedValue = e.params.data.id;
-                    var isDuplicate = false;
-                    var currentSelect = $(this);
-
-                    $('#items_table tbody tr').each(function() {
-                        var otherSelect = $(this).find('.item-unit-select-init');
-                        if (otherSelect.length && otherSelect[0] !== currentSelect[0]) {
-                            if (otherSelect.val() === selectedValue) {
-                                isDuplicate = true;
-                                return false; // Break loop
-                            }
+                $('#items_table tbody tr').each(function() {
+                    var otherSelect = $(this).find('.item-unit-select-init');
+                    if (otherSelect.length && otherSelect[0] !== currentSelect[0]) {
+                        if (otherSelect.val() === selectedValue) {
+                            isDuplicate = true;
+                            return false;
                         }
-                    });
-
-                    if (isDuplicate) {
-                        Swal.fire({
-                            title: 'Duplicate Unit',
-                            text: 'This unit is already added to the list.',
-                            icon: 'warning',
-                            confirmButtonColor: '#405189'
-                        });
-                        currentSelect.val(null).trigger('change');
                     }
                 });
-                
-                calculateRow(row);
-            }, 100);
+
+                if (isDuplicate) {
+                    Swal.fire({
+                        title: 'Duplicate Unit',
+                        text: 'This unit is already added to the list.',
+                        icon: 'warning',
+                        confirmButtonColor: '#405189'
+                    });
+                    currentSelect.val(null).trigger('change');
+                    $row.find('.item-unit-id').val('');
+                    $row.find('.item-unit-uid').val('');
+                }
+            });
+
+            // Handle clear
+            $select.on('select2:unselect', function() {
+                $row.find('.item-unit-id').val('');
+                $row.find('.item-unit-uid').val('');
+            });
         }
+
+        // Initialize any existing rows on tab show
+        $('button[data-bs-target="#step2"]').on('shown.bs.tab', function() {
+            setTimeout(function() {
+                $('#items_table .item-unit-select-init').each(function() {
+                    if (!$(this).hasClass('select2-hidden-accessible') && typeof $.fn.select2 === 'function') {
+                        $(this).select2({
+                            placeholder: "Pilih Unit / Peralatan",
+                            width: '100%',
+                            allowClear: true
+                        });
+                    }
+                });
+            }, 200);
+        });
 
         // ==========================================
         // Units & Pricing Logic
