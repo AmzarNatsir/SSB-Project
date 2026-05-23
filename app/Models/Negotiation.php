@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Negotiation extends Model
 {
@@ -83,6 +84,11 @@ class Negotiation extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(NegotiationApproval::class)->orderBy('level', 'asc');
+    }
+
+    public function contract(): HasOne
+    {
+        return $this->hasOne(Contract::class);
     }
     
     // Helper to check if can add round

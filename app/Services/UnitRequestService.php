@@ -98,45 +98,52 @@ class UnitRequestService
     public function create(array $data, int $userId): UnitRequest
     {
         return DB::transaction(function () use ($data, $userId) {
-            // Validate project has APPROVED negotiation
-            $project = \App\Models\Project::with(['negotiations' => function ($query) {
-                $query->where('status', \App\Enums\NegotiationStatus::APPROVED)
-                      ->with('quotation.items');
-            }])->findOrFail($data['project_id']);
+            // STRICT MODE: Permintaan Unit sekarang berbasis Final Contract ACTIVE.
+            // Validasi: contract harus milik project, ACTIVE, dan belum punya UR aktif.
+            $contract = \App\Models\Contract::with(['items', 'negotiation.quotation'])
+                ->where('id', $data['contract_id'])
+                ->where('project_id', $data['project_id'])
+                ->where('status', \App\Enums\ContractStatus::ACTIVE)
+                ->first();
 
-            $approvedNegotiation = $project->negotiations->first();
-
-            if (!$approvedNegotiation) {
-                throw new \Exception("Project does not have an APPROVED negotiation.");
+            if (! $contract) {
+                throw new \Exception('Kontrak tidak ditemukan / tidak ACTIVE / tidak terkait dengan proyek.');
             }
 
-            // Retrieve quotation through negotiation relationship
-            $quotation = $approvedNegotiation->quotation;
+            // Cek belum ada UR aktif untuk kontrak ini (1 UR per contract)
+            $hasActiveUR = \App\Models\UnitRequest::where('contract_id', $contract->id)
+                ->whereIn('status', [
+                    UnitRequestStatus::DRAFT,
+                    UnitRequestStatus::SUBMITTED,
+                    UnitRequestStatus::APPROVED,
+                    UnitRequestStatus::FORWARDED_TO_WORKSHOP,
+                ])->exists();
 
-            if (!$quotation) {
-                throw new \Exception("Negotiation does not have an associated quotation.");
+            if ($hasActiveUR) {
+                throw new \Exception('Kontrak ini sudah memiliki Permintaan Unit aktif. Selesaikan atau tolak yang ada dulu.');
             }
 
-            // Validate quotation has items
-            if ($quotation->items->isEmpty()) {
-                throw new \Exception("Cannot create unit request: quotation has no items.");
+            if ($contract->items->isEmpty()) {
+                throw new \Exception('Tidak bisa membuat Permintaan Unit: contract items kosong.');
             }
 
-            // Generate unique request_number
+            // Backward-compat: tetap simpan negotiation_id & quotation_id (via contract relation)
+            $negotiation = $contract->negotiation;
+            $quotation = $negotiation?->quotation;
+
             $requestNumber = $this->generateRequestNumber();
 
-            // Handle attachment upload if provided
             $attachmentPath = null;
             if (isset($data['attachment']) && $data['attachment'] instanceof UploadedFile) {
                 $attachmentPath = $this->handleFileUpload($data['attachment']);
             }
 
-            // Create unit_request with status DRAFT
             $unitRequest = $this->repo->create([
                 'uid' => (string) Str::uuid(),
                 'project_id' => $data['project_id'],
-                'quotation_id' => $quotation->id,
-                'negotiation_id' => $approvedNegotiation->id,
+                'contract_id' => $contract->id,
+                'negotiation_id' => $negotiation?->id,
+                'quotation_id' => $quotation?->id,
                 'request_number' => $requestNumber,
                 'request_date' => $data['request_date'],
                 'mobilization_date' => $data['mobilization_date'],
@@ -146,22 +153,22 @@ class UnitRequestService
                 'created_by' => $userId,
             ]);
 
-            // Populate unit_request_items from quotation_items
+            // Snapshot items DARI contract_items (bukan quotation_items lagi)
             $items = [];
-            foreach ($quotation->items as $quotationItem) {
+            foreach ($contract->items as $contractItem) {
                 $items[] = [
-                    'quotation_item_id' => $quotationItem->id,
-                    'equipment_id' => $quotationItem->unit_id ?? null, // Map unit_id to equipment_id
-                    'unit_name' => $quotationItem->unit_name,
-                    'qty' => (int) $quotationItem->quantity,
-                    'duration_days' => $quotationItem->duration ? (int) $quotationItem->duration : null,
-                    'remarks' => null, // User can add remarks later
+                    'contract_item_id' => $contractItem->id,
+                    'quotation_item_id' => null,
+                    'equipment_id' => $contractItem->unit_id ?? null,
+                    'unit_name' => $contractItem->unit_name,
+                    'qty' => (int) $contractItem->qty,
+                    'duration_days' => $contractItem->duration ? (int) $contractItem->duration : null,
+                    'remarks' => null,
                 ];
             }
 
             $this->repo->createItems($unitRequest, $items);
 
-            // Log creation action using AuditService
             $this->auditService->log(
                 $unitRequest,
                 'UNIT_REQUEST_CREATED',
@@ -170,11 +177,12 @@ class UnitRequestService
                 [
                     'request_number' => $requestNumber,
                     'project_id' => $data['project_id'],
-                    'items_count' => count($items)
+                    'contract_id' => $contract->id,
+                    'contract_number' => $contract->contract_number,
+                    'items_count' => count($items),
                 ]
             );
 
-            // Reload with relationships
             return $this->repo->findByUid($unitRequest->uid);
         });
     }
@@ -316,52 +324,37 @@ class UnitRequestService
             }
 
             // Retrieve approval flow for code 'UnitRequest' using ApprovalFlowService
-            $approvalFlow = $this->flowService->getFlowByCode('UnitRequest');
-            $approvalLevels = $approvalFlow ? $approvalFlow->levels()->orderBy('level_number')->get() : collect();
+            $approvalLevels = $this->flowService->getLevels('UnitRequest');
 
-            // If no approval levels: auto-approve
+            // STRICT MODE: matriks approval WAJIB di-setup dulu — tidak ada auto-approve
             if ($approvalLevels->isEmpty()) {
-                $this->repo->update($unitRequest, [
-                    'status' => UnitRequestStatus::APPROVED,
-                    'approved_by' => $userId,
-                    'approved_at' => now(),
+                throw ValidationException::withMessages([
+                    'approval' => 'Matriks approval untuk Unit Request belum diatur. Hubungi admin untuk konfigurasi di menu Approval Matrix.',
                 ]);
-
-                // Log auto-approval action
-                $this->auditService->log(
-                    $unitRequest,
-                    'UNIT_REQUEST_AUTO_APPROVED',
-                    $userId,
-                    ['status' => UnitRequestStatus::DRAFT->value],
-                    ['status' => UnitRequestStatus::APPROVED->value]
-                );
-            } else {
-                // If approval levels exist: create first level approval record with status pending
-                $firstLevel = $approvalLevels->first();
-
-                \App\Models\UnitRequestApproval::create([
-                    'unit_request_id' => $unitRequest->id,
-                    'level' => $firstLevel->level_number,
-                    'approver_id' => null, // Will be determined by approver_type
-                    'status' => 'pending',
-                    'remarks' => null,
-                    'approved_at' => null,
-                ]);
-
-                // Update status to SUBMITTED
-                $this->repo->update($unitRequest, [
-                    'status' => UnitRequestStatus::SUBMITTED,
-                ]);
-
-                // Log submission action
-                $this->auditService->log(
-                    $unitRequest,
-                    'UNIT_REQUEST_SUBMITTED',
-                    $userId,
-                    ['status' => $unitRequest->status === UnitRequestStatus::REJECTED ? UnitRequestStatus::REJECTED->value : UnitRequestStatus::DRAFT->value],
-                    ['status' => UnitRequestStatus::SUBMITTED->value, 'approval_level' => $firstLevel->level_number]
-                );
             }
+
+            $firstLevel = $approvalLevels->first();
+
+            \App\Models\UnitRequestApproval::create([
+                'unit_request_id' => $unitRequest->id,
+                'level'           => $firstLevel->level_number,
+                'approver_id'     => null,
+                'status'          => 'pending',
+                'remarks'         => null,
+                'approved_at'     => null,
+            ]);
+
+            $this->repo->update($unitRequest, [
+                'status' => UnitRequestStatus::SUBMITTED,
+            ]);
+
+            $this->auditService->log(
+                $unitRequest,
+                'UNIT_REQUEST_SUBMITTED',
+                $userId,
+                ['status' => $unitRequest->status === UnitRequestStatus::REJECTED ? UnitRequestStatus::REJECTED->value : UnitRequestStatus::DRAFT->value],
+                ['status' => UnitRequestStatus::SUBMITTED->value, 'approval_level' => $firstLevel->level_number]
+            );
 
             // Fire UnitRequestSubmitted event
             event(new \App\Events\UnitRequestSubmitted($unitRequest));
@@ -405,18 +398,60 @@ class UnitRequestService
                 ]);
             }
 
-            // Update pending approval record
-            $pendingApproval = $unitRequest->approvals()->where('status', 'pending')->first();
-            if ($pendingApproval) {
-                $pendingApproval->update([
-                    'approver_id'  => $approverId,
-                    'status'       => $decision,
-                    'remarks'      => $remarks,
-                    'approved_at'  => now(),
+            // Update pending approval record (current level)
+            $pendingApproval = $unitRequest->approvals()->where('status', 'pending')->orderBy('level')->first();
+            if (! $pendingApproval) {
+                throw ValidationException::withMessages([
+                    'approval' => 'Tidak ada approval pending pada permintaan ini.',
                 ]);
             }
+            $currentLevel = $pendingApproval->level;
 
-            if ($decision === 'approved') {
+            $pendingApproval->update([
+                'approver_id' => $approverId,
+                'status'      => $decision,
+                'remarks'     => $remarks,
+                'approved_at' => now(),
+            ]);
+
+            if ($decision === 'rejected') {
+                $this->repo->update($unitRequest, [
+                    'status' => UnitRequestStatus::REJECTED,
+                ]);
+
+                $this->auditService->log(
+                    $unitRequest,
+                    'UNIT_REQUEST_REJECTED',
+                    $approverId,
+                    ['status' => UnitRequestStatus::SUBMITTED->value],
+                    ['status' => UnitRequestStatus::REJECTED->value, 'level' => $currentLevel, 'remarks' => $remarks]
+                );
+
+                return $this->repo->findByUid($unitRequest->uid);
+            }
+
+            // decision === 'approved': cek apakah masih ada level berikutnya
+            $levels = $this->flowService->getLevels('UnitRequest');
+            $nextLevel = $levels->firstWhere('level_number', $currentLevel + 1);
+
+            if ($nextLevel) {
+                // Masih ada level berikutnya — buat approval pending untuk level baru, status tetap SUBMITTED
+                \App\Models\UnitRequestApproval::create([
+                    'unit_request_id' => $unitRequest->id,
+                    'level'           => $nextLevel->level_number,
+                    'approver_id'     => null,
+                    'status'          => 'pending',
+                ]);
+
+                $this->auditService->log(
+                    $unitRequest,
+                    'UNIT_REQUEST_APPROVED_LEVEL',
+                    $approverId,
+                    ['level' => $currentLevel],
+                    ['next_level' => $nextLevel->level_number, 'remarks' => $remarks]
+                );
+            } else {
+                // Level terakhir — final approval
                 $this->repo->update($unitRequest, [
                     'status'      => UnitRequestStatus::APPROVED,
                     'approved_by' => $approverId,
@@ -428,23 +463,10 @@ class UnitRequestService
                     'UNIT_REQUEST_APPROVED',
                     $approverId,
                     ['status' => UnitRequestStatus::SUBMITTED->value],
-                    ['status' => UnitRequestStatus::APPROVED->value, 'remarks' => $remarks]
+                    ['status' => UnitRequestStatus::APPROVED->value, 'final_level' => $currentLevel, 'remarks' => $remarks]
                 );
 
-                // Fire UnitRequestApproved event
                 event(new \App\Events\UnitRequestApproved($unitRequest));
-            } else {
-                $this->repo->update($unitRequest, [
-                    'status' => UnitRequestStatus::REJECTED,
-                ]);
-
-                $this->auditService->log(
-                    $unitRequest,
-                    'UNIT_REQUEST_REJECTED',
-                    $approverId,
-                    ['status' => UnitRequestStatus::SUBMITTED->value],
-                    ['status' => UnitRequestStatus::REJECTED->value, 'remarks' => $remarks]
-                );
             }
 
             return $this->repo->findByUid($unitRequest->uid);

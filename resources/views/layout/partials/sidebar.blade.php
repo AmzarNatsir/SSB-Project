@@ -186,15 +186,17 @@
                                     class="ti ti-invoice"></i><span>Project Adjustment</span></a></li>
                     </ul>
                 </li>
-                <li class="menu-title"><span>PETTY CASH MANAGEMENT</span></li>
+                <li class="menu-title"><span>PENGELOLAAN KAS KECIL</span></li>
                 <li>
                     <ul>
-                        <li class="{{ Request::is('petty-cash-request*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-cash"></i><span>Petty Cash Request</span></a></li>
-                        <li class="{{ Request::is('payment-of-fees*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-cash"></i><span>Payment of Fees</span></a></li>
-                        <li class="{{ Request::is('cash-purchase*') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-cash"></i><span>Cash Purchase</span></a></li>
+                        <li class="{{ Request::is('petty-cash-categories*') ? 'active' : '' }}"><a href="{{ route('petty-cash-categories.index') }}"><i
+                                    class="ti ti-tag"></i><span>Jenis Biaya (Master)</span></a></li>
+                        <li class="{{ Request::is('petty-cash-requests*') ? 'active' : '' }}"><a href="{{ route('petty-cash-requests.index') }}"><i
+                                    class="ti ti-cash"></i><span>Permintaan Kas Kecil</span></a></li>
+                        <li class="{{ Request::is('petty-cash-payments*') ? 'active' : '' }}"><a href="{{ route('petty-cash-payments.index') }}"><i
+                                    class="ti ti-receipt"></i><span>Pembayaran Biaya</span></a></li>
+                        <li class="{{ Request::is('petty-cash-purchases*') ? 'active' : '' }}"><a href="{{ route('petty-cash-purchases.index') }}"><i
+                                    class="ti ti-shopping-cart"></i><span>Pembelian Tunai</span></a></li>
                     </ul>
                 </li>
                 <li class="menu-title"><span>REPORTS</span></li>

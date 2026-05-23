@@ -15,14 +15,14 @@
                             <div class="d-flex align-items-center gap-3">
                                 <span class="text-muted">Lokasi Proyek</span>
                                 <span class="fw-semibold">: {{ $project->category->name ?? '-' }}</span>
-                                
+
                                 <span class="text-muted ms-4">Waktu Pelaksanaan</span>
                                 <span class="fw-semibold">: {{ $project->start_date ? $project->start_date->format('d M Y') : '-' }}</span>
                             </div>
                             <div class="d-flex align-items-center gap-3 mt-2">
                                 <span class="text-muted">Waktu Berjalan</span>
                                 <span class="fw-semibold">: {{ $project->duration_of_work ?? 0 }} Hari</span>
-                                
+
                                 <span class="text-muted ms-4">Sisa Waktu</span>
                                 <span class="fw-semibold">: {{ $project->end_date ? \Carbon\Carbon::now()->diffInDays($project->end_date, false) : 0 }} Hari</span>
                             </div>
@@ -36,7 +36,7 @@
                                     <i class="ti ti-edit me-1"></i> Edit
                                 </a>
                             @endif
-                            
+
                             @if($project->project_status === 'COMPLETED')
                                 <button type="button" class="btn btn-danger initiate-amendment-btn" data-uid="{{ $project->uid }}">
                                     <i class="ti ti-edit me-1"></i> Amandemen Project
@@ -116,11 +116,12 @@
                             </button>
                         </li>
                         @endif
-                        
+
                         @if($project->unitRequests->isNotEmpty())
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="units-tab" data-bs-toggle="tab" data-bs-target="#units" type="button" role="tab">
-                                <i class="ti ti-truck me-1"></i> Units
+                                <i class="ti ti-truck-delivery me-1"></i> Unit Request
+                                <span class="badge bg-primary-subtle text-primary ms-1">{{ $project->unitRequests->count() }}</span>
                             </button>
                         </li>
                         @endif
@@ -139,64 +140,93 @@
                     <div class="tab-content" id="projectTabsContent">
                         <!-- Overview Tab -->
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Project Number</label>
-                                        <p class="fw-semibold">{{ $project->project_number }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Project Code</label>
-                                        <p class="fw-semibold">{{ $project->project_code }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Category</label>
-                                        <p class="fw-semibold">{{ $project->category->name ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Sub Category</label>
-                                        <p class="fw-semibold">{{ $project->subCategory->name ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Status</label>
-                                        <div>
-                                            @php
-                                                $statusConfig = [
-                                                    'NOT STARTED' => ['color' => 'bg-purple', 'text' => 'Plan'],
-                                                    'ON PROGRESS' => ['color' => 'bg-info', 'text' => 'Survey'],
-                                                    'COMPLETED' => ['color' => 'bg-success', 'text' => 'Completed'],
-                                                    'ON HOLD' => ['color' => 'bg-warning', 'text' => 'On Hold'],
-                                                    'CANCELLED' => ['color' => 'bg-danger', 'text' => 'Cancelled'],
-                                                ];
-                                                $config = $statusConfig[$project->project_status] ?? ['color' => 'bg-secondary', 'text' => $project->project_status];
-                                            @endphp
-                                            <div class="d-flex align-items-center">
-                                                <div class="progress me-2" style="width: 80px; height: 6px;">
-                                                    <div class="progress-bar {{ $config['color'] }}" role="progressbar" style="width: 100%"></div>
+                            @php
+                                $statusConfig = [
+                                    'NOT STARTED' => ['color' => 'purple',    'icon' => 'ti-bookmark',      'text' => 'Plan'],
+                                    'ON PROGRESS' => ['color' => 'info',      'icon' => 'ti-progress',      'text' => 'Survey'],
+                                    'COMPLETED'   => ['color' => 'success',   'icon' => 'ti-circle-check',  'text' => 'Completed'],
+                                    'AMENDMENT'   => ['color' => 'danger',    'icon' => 'ti-edit-circle',   'text' => 'Amendment'],
+                                    'ON HOLD'     => ['color' => 'warning',   'icon' => 'ti-player-pause',  'text' => 'On Hold'],
+                                    'CANCELLED'   => ['color' => 'danger',    'icon' => 'ti-ban',           'text' => 'Cancelled'],
+                                ];
+                                $config = $statusConfig[$project->project_status] ?? ['color' => 'secondary', 'icon' => 'ti-help', 'text' => $project->project_status];
+                            @endphp
+
+                            {{-- Hero summary card --}}
+                            <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                                <div class="card-body p-4 position-relative" style="background: linear-gradient(135deg, rgba(13,110,253,0.08) 0%, rgba(102,16,242,0.05) 100%);">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-lg-7">
+                                            <div class="d-flex align-items-center mb-2 flex-wrap gap-2">
+                                                <span class="badge bg-{{ $config['color'] }}-subtle text-{{ $config['color'] }} border border-{{ $config['color'] }}-subtle px-3 py-2">
+                                                    <i class="ti {{ $config['icon'] }} me-1"></i>{{ $config['text'] }}
+                                                </span>
+                                                <span class="badge bg-white text-dark border px-3 py-2">
+                                                    <i class="ti ti-hash text-muted me-1"></i>{{ $project->project_number }}
+                                                </span>
+                                                @if($project->project_code)
+                                                <span class="badge bg-white text-dark border px-3 py-2">
+                                                    <i class="ti ti-code text-muted me-1"></i>{{ $project->project_code }}
+                                                </span>
+                                                @endif
+                                            </div>
+                                            <h4 class="fw-bold mb-1">{{ $project->project_name ?? 'Project' }}</h4>
+                                            <div class="text-muted small mb-2">
+                                                <i class="ti ti-folder me-1"></i>{{ $project->category->name ?? '-' }}
+                                                @if($project->subCategory)
+                                                    <span class="mx-1">/</span>{{ $project->subCategory->name }}
+                                                @endif
+                                            </div>
+                                            <p class="text-muted mb-0">{{ $project->description ?? 'Tidak ada deskripsi.' }}</p>
+                                        </div>
+                                        <div class="col-lg-5">
+                                            <div class="bg-white rounded-3 p-3 shadow-sm border">
+                                                <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.5px;">
+                                                    <i class="ti ti-coin text-success me-1"></i>Project Value
                                                 </div>
-                                                <span>{{ $config['text'] }}</span>
+                                                <h3 class="fw-bold text-success mb-0">Rp {{ number_format($project->project_value, 0, ',', '.') }}</h3>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Project Value</label>
-                                        <p class="fw-semibold text-success">Rp {{ number_format($project->project_value, 0, ',', '.') }}</p>
+                            </div>
+
+                            {{-- Info grid --}}
+                            <div class="row g-3">
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-hash text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Project Number</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->project_number }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Description</label>
-                                        <p>{{ $project->description ?? '-' }}</p>
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-code text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Project Code</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->project_code ?? '—' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-folder text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Category</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->category->name ?? '—' }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-folders text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Sub Category</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->subCategory->name ?? '—' }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -204,71 +234,121 @@
 
                         <!-- Project Details Tab -->
                         <div class="tab-pane fade" id="details" role="tabpanel">
-                            <div class="row">
+                            @php
+                                $startDate = $project->start_date;
+                                $endDate = $project->end_date;
+                                $today = \Carbon\Carbon::now();
+                                $totalDays = ($startDate && $endDate) ? $startDate->diffInDays($endDate) : 0;
+                                $elapsed = ($startDate && $today->gte($startDate)) ? $startDate->diffInDays($today->lte($endDate ?? $today) ? $today : $endDate) : 0;
+                                $progressPct = $totalDays > 0 ? min(100, round(($elapsed / $totalDays) * 100)) : 0;
+                            @endphp
+
+                            {{-- Timeline header --}}
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-body p-4">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-3">
+                                            <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.4px;">
+                                                <i class="ti ti-calendar-plus text-primary me-1"></i>Request Date
+                                            </div>
+                                            <div class="fw-semibold">{{ $project->request_date ? $project->request_date->format('d M Y') : '—' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.4px;">
+                                                <i class="ti ti-calendar-event text-success me-1"></i>Start Date
+                                            </div>
+                                            <div class="fw-semibold">{{ $startDate ? $startDate->format('d M Y') : '—' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.4px;">
+                                                <i class="ti ti-calendar-x text-danger me-1"></i>End Date
+                                            </div>
+                                            <div class="fw-semibold">{{ $endDate ? $endDate->format('d M Y') : '—' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.4px;">
+                                                <i class="ti ti-clock text-info me-1"></i>Duration
+                                            </div>
+                                            <div class="fw-semibold">{{ $project->duration_of_work ?? 0 }} Hari</div>
+                                        </div>
+                                    </div>
+                                    @if($startDate && $endDate)
+                                    <div class="mt-4">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span class="text-muted">Progress timeline</span>
+                                            <span class="fw-semibold text-primary">{{ $progressPct }}%</span>
+                                        </div>
+                                        <div class="progress" style="height:8px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ $progressPct }}%"></div>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Detail grid --}}
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Request Date</label>
-                                        <p class="fw-semibold">{{ $project->request_date ? $project->request_date->format('d M Y') : '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-map-pin text-danger me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Project Location</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->project_location ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Start Date</label>
-                                        <p class="fw-semibold">{{ $project->start_date ? $project->start_date->format('d M Y') : '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-current-location text-warning me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Coordinates</span>
+                                        </div>
+                                        <div class="fw-semibold font-monospace small">{{ $project->project_coordinates ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">End Date</label>
-                                        <p class="fw-semibold">{{ $project->end_date ? $project->end_date->format('d M Y') : '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-briefcase text-info me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Job Type</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->job_type ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Duration</label>
-                                        <p class="fw-semibold">{{ $project->duration_of_work ?? 0 }} Days</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-user-cog text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">PIC</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->pic->name ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Project Location</label>
-                                        <p class="fw-semibold">{{ $project->project_location ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-bulldozer text-success me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Equipment Rental Rate</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->equipmentRentalRate->jenis_alat ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Coordinates</label>
-                                        <p class="fw-semibold">{{ $project->project_coordinates ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-building-bank text-secondary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Bank Account</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->bank_account ?? '—' }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Job Type</label>
-                                        <p class="fw-semibold">{{ $project->job_type ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">PIC</label>
-                                        <p class="fw-semibold">{{ $project->pic->name ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Equipment Rental Rate</label>
-                                        <p class="fw-semibold">{{ $project->equipmentRentalRate->jenis_alat ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Bank Account</label>
-                                        <p class="fw-semibold">{{ $project->bank_account ?? '-' }}</p>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Scope of Work</label>
-                                        <p>{{ $project->scope_of_work ?? '-' }}</p>
+                                <div class="col-12">
+                                    <div class="border rounded-3 p-3 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-list-details text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Scope of Work</span>
+                                        </div>
+                                        <div>{{ $project->scope_of_work ?? '—' }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -276,41 +356,101 @@
 
                         <!-- Client Information Tab -->
                         <div class="tab-pane fade" id="client" role="tabpanel">
-                            <div class="row">
+                            @php
+                                $clientName = $project->user_name ?? '—';
+                                $clientInitials = collect(explode(' ', trim($clientName)))->filter()->take(2)
+                                    ->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->implode('');
+                            @endphp
+
+                            {{-- Client header --}}
+                            <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                                <div class="card-body p-4" style="background: linear-gradient(135deg, rgba(25,135,84,0.08) 0%, rgba(13,202,240,0.05) 100%);">
+                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                        <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success text-white fw-bold shadow-sm"
+                                             style="width:64px;height:64px;font-size:22px;">
+                                            {{ $clientInitials ?: '?' }}
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h4 class="fw-bold mb-1">{{ $clientName }}</h4>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @if($project->user_code)
+                                                <span class="badge bg-white text-dark border px-3 py-2">
+                                                    <i class="ti ti-id text-muted me-1"></i>{{ $project->user_code }}
+                                                </span>
+                                                @endif
+                                                @if($project->taxpayer_id)
+                                                <span class="badge bg-white text-dark border px-3 py-2">
+                                                    <i class="ti ti-receipt-tax text-muted me-1"></i>NPWP: {{ $project->taxpayer_id }}
+                                                </span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Contact grid --}}
+                            <div class="row g-3">
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">User Name</label>
-                                        <p class="fw-semibold">{{ $project->user_name }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-user text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">User Name</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->user_name ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">User Code</label>
-                                        <p class="fw-semibold">{{ $project->user_code ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-id text-primary me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">User Code</span>
+                                        </div>
+                                        <div class="fw-semibold">{{ $project->user_code ?? '—' }}</div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Email</label>
-                                        <p class="fw-semibold">{{ $project->email ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-mail text-info me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Email</span>
+                                        </div>
+                                        @if($project->email)
+                                            <a href="mailto:{{ $project->email }}" class="fw-semibold text-decoration-none">{{ $project->email }}</a>
+                                        @else
+                                            <div class="fw-semibold">—</div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Phone Number</label>
-                                        <p class="fw-semibold">{{ $project->phone_number ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-phone text-success me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Phone Number</span>
+                                        </div>
+                                        @if($project->phone_number)
+                                            <a href="tel:{{ $project->phone_number }}" class="fw-semibold text-decoration-none">{{ $project->phone_number }}</a>
+                                        @else
+                                            <div class="fw-semibold">—</div>
+                                        @endif
                                     </div>
                                 </div>
                                 <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Taxpayer ID</label>
-                                        <p class="fw-semibold">{{ $project->taxpayer_id ?? '-' }}</p>
+                                    <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-receipt-tax text-warning me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Taxpayer ID</span>
+                                        </div>
+                                        <div class="fw-semibold font-monospace">{{ $project->taxpayer_id ?? '—' }}</div>
                                     </div>
                                 </div>
-                                <div class="col-md-12">
-                                    <div class="mb-3">
-                                        <label class="text-muted small">Address</label>
-                                        <p>{{ $project->user_address ?? '-' }}</p>
+                                <div class="col-12">
+                                    <div class="border rounded-3 p-3 bg-light-subtle">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="ti ti-map-pin text-danger me-2"></i>
+                                            <span class="text-muted small text-uppercase fw-semibold" style="letter-spacing:.4px;">Address</span>
+                                        </div>
+                                        <div>{{ $project->user_address ?? '—' }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -335,9 +475,9 @@
                                 <div class="card-body">
                                     <h6 class="card-title mb-3">Dropzone File Upload</h6>
                                     <p class="text-muted small mb-3">DropzoneJS is an open source library that provides drag'n'drop file uploads with image previews.</p>
-                                    
-                                    <form action="{{ route('projects.upload-image', $project->uid) }}" 
-                                          class="dropzone" 
+
+                                    <form action="{{ route('projects.upload-image', $project->uid) }}"
+                                          class="dropzone"
                                           id="projectImageDropzone">
                                         @csrf
                                         <div class="dz-message text-center">
@@ -357,12 +497,12 @@
                                         @forelse($project->images as $image)
                                             <div class="col-md-4 col-lg-3 mb-3" id="image-{{ $image->uid }}">
                                                 <div class="card h-100 shadow-sm border-0">
-                                                    <a href="{{ url('storage/' . $image->file_path) }}" 
-                                                       data-fancybox="gallery" 
+                                                    <a href="{{ url('storage/' . $image->file_path) }}"
+                                                       data-fancybox="gallery"
                                                        data-type="image"
                                                        data-caption="{{ $image->description ?? $image->file_image }}">
-                                                        <img src="{{ url('storage/' . $image->file_path) }}" 
-                                                             class="card-img-top rounded" 
+                                                        <img src="{{ url('storage/' . $image->file_path) }}"
+                                                             class="card-img-top rounded"
                                                              alt="{{ $image->file_image }}"
                                                              style="height: 200px; object-fit: cover; cursor: pointer;">
                                                     </a>
@@ -370,8 +510,8 @@
                                                         <p class="card-text small text-truncate mb-2" title="{{ $image->description ?? $image->file_image }}">
                                                             {{ $image->description ?? $image->file_image }}
                                                         </p>
-                                                        <button type="button" 
-                                                                class="btn btn-sm btn-outline-danger delete-image-btn w-100" 
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-danger delete-image-btn w-100"
                                                                 data-id="{{ $image->uid }}">
                                                             <i class="ti ti-trash"></i> Delete
                                                         </button>
@@ -563,7 +703,7 @@
                                                     </li>
                                                 @endforeach
                                             </ul>
-                                            
+
                                             <div class="tab-content pt-2">
                                                 @foreach(App\Enums\BudgetCategory::cases() as $category)
                                                     <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="budget_tab_{{ $category->value }}" role="tabpanel">
@@ -749,7 +889,7 @@
                                                     <div class="position-absolute translate-middle-x bg-info rounded-circle" style="width: 12px; height: 12px; left: -32.5px; top: 10px; border: 3px solid #fff;"></div>
                                                     <h6 class="mb-1 fw-bold text-info">Round {{ $round->round_number }} Negotiation</h6>
                                                     <p class="text-muted small mb-2">Meeting on {{ $round->meeting_date->format('d M Y') }}</p>
-                                                    
+
                                                     <div class="row g-2">
                                                         <div class="col-auto">
                                                             <div class="bg-danger-transparent border border-danger-subtle p-2 rounded">
@@ -807,7 +947,7 @@
                                                         <h5 class="mb-0 text-primary">{{ $contract->contract_number }}</h5>
                                                     </div>
                                                 </div>
-                                                
+
                                                 <div class="row">
                                                     <div class="col-xl-4 col-lg-5 mb-4 mb-lg-0">
                                                         <div class="card h-100 border shadow-none mb-0">
@@ -904,9 +1044,9 @@
                                                                         <tbody class="border-0">
                                                                             @php $totalagreed = 0; @endphp
                                                                             @foreach($contract->items as $item)
-                                                                            @php 
+                                                                            @php
                                                                                 $itemTotal = $item->total_price ?? ($item->qty * $item->unit_price);
-                                                                                $totalagreed += $itemTotal; 
+                                                                                $totalagreed += $itemTotal;
                                                                             @endphp
                                                                             <tr>
                                                                                 <td class="fw-medium text-dark">{{ $item->unit_name ?? $item->description ?? '-' }}</td>
@@ -1042,66 +1182,275 @@
                                     </div>
                                     @endif
 
-                                    {{-- Deployed Units (dari Unit Request) --}}
+                                    {{-- Deployed Units (Unit Request — APPROVED_FROM_WORKSHOP) --}}
                                     @if($project->unitRequests->isNotEmpty())
-                                    <div class="card shadow-sm border-0 mb-4">
-                                        <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between">
-                                            <h5 class="card-title mb-0 d-flex align-items-center">
-                                                <i class="ti ti-truck me-2 text-primary"></i>Deployed Units <small class="text-muted ms-2">(dari Unit Request)</small>
-                                            </h5>
-                                        </div>
-                                        <div class="card-body">
-                                            @foreach($project->unitRequests as $unitRequest)
-                                            <div class="mb-4">
-                                                <div class="d-flex align-items-center justify-content-between mb-3">
-                                                    <div>
-                                                        <h6 class="text-muted text-uppercase fw-semibold mb-1 small">Request Number</h6>
-                                                        <h5 class="mb-0 text-primary">{{ $unitRequest->request_number }}</h5>
+                                    @php
+                                        $totalReq = $project->unitRequests->count();
+                                        $totalUnitsDeployed = $project->unitRequests->sum(fn($ur) => $ur->items->sum('qty'));
+                                        $totalReady = $project->unitRequests->sum(fn($ur) => $ur->items->where('unit_ready', true)->sum('qty'));
+                                        $totalAssigned = $project->unitRequests->flatMap->items->whereNotNull('operator_id')->count();
+                                    @endphp
+                                    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                                        <div class="card-header bg-gradient bg-primary-subtle border-0 py-3">
+                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-md bg-white rounded-3 d-flex align-items-center justify-content-center me-3 shadow-sm" style="width:48px;height:48px;">
+                                                        <i class="ti ti-truck-delivery fs-3 text-primary"></i>
                                                     </div>
-                                                    <a href="{{ route('unit-requests.show', $unitRequest->uid) }}" class="btn btn-sm btn-outline-primary">
-                                                        <i class="ti ti-external-link me-1"></i> View Request
-                                                    </a>
+                                                    <div>
+                                                        <h5 class="card-title mb-0 fw-bold">Unit Request — Deployed</h5>
+                                                        <small class="text-muted">Unit yang telah disetujui Workshop dan digunakan di project ini</small>
+                                                    </div>
                                                 </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                                                        <i class="ti ti-file-text text-primary me-1"></i> {{ $totalReq }} Request
+                                                    </span>
+                                                    <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                                                        <i class="ti ti-package text-info me-1"></i> {{ (int) $totalUnitsDeployed }} Unit
+                                                    </span>
+                                                    <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                                                        <i class="ti ti-circle-check text-success me-1"></i> {{ (int) $totalReady }} Ready
+                                                    </span>
+                                                    <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                                                        <i class="ti ti-user-check text-warning me-1"></i> {{ $totalAssigned }} Operator
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3 p-md-4">
+                                            @foreach($project->unitRequests as $unitRequest)
+                                            @php
+                                                $reqReady = $unitRequest->items->where('unit_ready', true)->sum('qty');
+                                                $reqTotal = $unitRequest->items->sum('qty');
+                                                $readyPct = $reqTotal > 0 ? round(($reqReady / $reqTotal) * 100) : 0;
+                                            @endphp
+                                            <div class="border rounded-3 mb-3 overflow-hidden bg-white">
+                                                {{-- Header Request --}}
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 border-bottom bg-light-subtle">
+                                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                        <div>
+                                                            <div class="text-muted text-uppercase small fw-semibold mb-1" style="letter-spacing:.5px;">Request Number</div>
+                                                            <a href="{{ route('unit-requests.show', $unitRequest->uid) }}" class="text-decoration-none">
+                                                                <h5 class="mb-0 text-primary fw-bold">
+                                                                    <i class="ti ti-file-invoice me-1"></i>{{ $unitRequest->request_number }}
+                                                                </h5>
+                                                            </a>
+                                                        </div>
+                                                        <div class="vr d-none d-md-block"></div>
+                                                        <div class="small">
+                                                            <div class="text-muted">
+                                                                <i class="ti ti-calendar me-1"></i>{{ optional($unitRequest->request_date)->format('d M Y') ?? optional($unitRequest->created_at)->format('d M Y') }}
+                                                            </div>
+                                                            @if($unitRequest->creator)
+                                                            <div class="text-muted">
+                                                                <i class="ti ti-user me-1"></i>{{ $unitRequest->creator->name }}
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                        <div class="vr d-none d-md-block"></div>
+                                                        <div>
+                                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                                                                <i class="ti ti-shield-check me-1"></i>Disetujui Workshop
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-3">
+                                                        <div class="text-end d-none d-md-block">
+                                                            <div class="small text-muted">Kesiapan Unit</div>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                <div class="progress" style="width:100px;height:6px;">
+                                                                    <div class="progress-bar bg-success" style="width: {{ $readyPct }}%"></div>
+                                                                </div>
+                                                                <span class="small fw-semibold">{{ $readyPct }}%</span>
+                                                            </div>
+                                                        </div>
+                                                        <a href="{{ route('unit-requests.show', $unitRequest->uid) }}" class="btn btn-sm btn-primary">
+                                                            <i class="ti ti-external-link me-1"></i> Detail
+                                                        </a>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Items table --}}
                                                 <div class="table-responsive">
-                                                    <table class="table table-hover border-top-0 table-sm">
-                                                        <thead class="bg-light-500">
-                                                            <tr>
-                                                                <th class="border-0">Unit Name</th>
-                                                                <th class="text-center border-0">Qty</th>
-                                                                <th class="text-center border-0">Duration (Days)</th>
-                                                                <th class="text-center border-0">Unit Ready</th>
-                                                                <th class="border-0">Operator Name</th>
-                                                                <th class="border-0">Remarks</th>
+                                                    <table class="table align-middle mb-0">
+                                                        <thead class="text-muted small text-uppercase" style="letter-spacing:.4px;">
+                                                            <tr class="bg-light-subtle">
+                                                                <th class="ps-3" style="width:40px;">#</th>
+                                                                <th>Unit</th>
+                                                                <th class="text-center" style="width:90px;">Qty</th>
+                                                                <th class="text-center" style="width:120px;">Durasi</th>
+                                                                <th class="text-center" style="width:110px;">Status</th>
+                                                                <th>Operator</th>
+                                                                <th class="pe-3">Catatan</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody class="border-0">
-                                                            @foreach($unitRequest->items as $item)
+                                                        <tbody>
+                                                            @foreach($unitRequest->items as $idx => $item)
+                                                            @php
+                                                                $opProfile = $deployedOperators[$item->operator_id] ?? null;
+                                                                $opName = $item->operator_name ?: ($opProfile['name'] ?? null);
+                                                                $opPos = $opProfile['position'] ?? null;
+                                                                $initials = $opName
+                                                                    ? collect(explode(' ', trim($opName)))->filter()->take(2)
+                                                                        ->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->implode('')
+                                                                    : '';
+                                                                $photoUrl = $item->operator_id ? route('employees.photo', ['id' => $item->operator_id]) : null;
+                                                            @endphp
                                                             <tr>
-                                                                <td class="fw-medium text-dark">{{ $item->unit_name }}</td>
-                                                                <td class="text-center">{{ $item->qty }}</td>
-                                                                <td class="text-center">{{ $item->duration_days }}</td>
-                                                                <td class="text-center">
-                                                                    @if($item->unit_ready)
-                                                                        <span class="badge bg-success-transparent text-success border border-success-subtle px-2 py-1">Ready</span>
-                                                                    @else
-                                                                        <span class="badge bg-warning-transparent text-warning border border-warning-subtle px-2 py-1">Not Ready</span>
+                                                                <td class="ps-3 text-muted">{{ $idx + 1 }}</td>
+                                                                <td>
+                                                                    <div class="fw-semibold text-dark">{{ $item->unit_name }}</div>
+                                                                    @if($item->equipment_code)
+                                                                        <div class="small text-muted"><i class="ti ti-barcode me-1"></i>{{ $item->equipment_code }}</div>
+                                                                    @endif
+                                                                    @if($item->replaced_at)
+                                                                        <div class="mt-1">
+                                                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                                                                <i class="ti ti-replace me-1"></i>Replaced
+                                                                                @if($item->replacedByItem && $item->replacedByItem->unitReplacement)
+                                                                                    by
+                                                                                    <a href="{{ route('unit-replacements.show', $item->replacedByItem->unitReplacement->uid) }}" class="text-warning text-decoration-underline">
+                                                                                        {{ $item->replacedByItem->unitReplacement->replacement_number }}
+                                                                                    </a>
+                                                                                @endif
+                                                                            </span>
+                                                                        </div>
                                                                     @endif
                                                                 </td>
-                                                                <td>{{ $item->operator_name ?? '-' }}</td>
-                                                                <td class="text-muted small">{{ $item->remarks ?? '-' }}</td>
+                                                                <td class="text-center">
+                                                                    <span class="fw-semibold">{{ (int) $item->qty }}</span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    @if($item->duration_days)
+                                                                        <span class="text-muted small">{{ $item->duration_days }} Hari</span>
+                                                                    @else
+                                                                        <span class="text-muted">—</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    @if($item->unit_ready)
+                                                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                                                            <i class="ti ti-circle-check me-1"></i>Ready
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle">
+                                                                            <i class="ti ti-clock me-1"></i>Belum Ready
+                                                                        </span>
+                                                                    @endif
+                                                                </td>
+                                                                <td>
+                                                                    @if($opName || $item->operator_id)
+                                                                        <div class="d-flex align-items-center gap-2">
+                                                                            <div class="position-relative" style="width:34px;height:34px;flex-shrink:0;">
+                                                                                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary fw-semibold position-absolute top-0 start-0"
+                                                                                      style="width:34px;height:34px;font-size:12px;">
+                                                                                    {{ $initials ?: '?' }}
+                                                                                </span>
+                                                                                @if($photoUrl)
+                                                                                <img src="{{ $photoUrl }}" alt="{{ $opName }}"
+                                                                                     class="rounded-circle position-absolute top-0 start-0"
+                                                                                     style="width:34px;height:34px;object-fit:cover;background:#fff;"
+                                                                                     onerror="this.style.display='none'">
+                                                                                @endif
+                                                                            </div>
+                                                                            <div class="lh-sm">
+                                                                                <div class="fw-medium small">{{ $opName ?? 'ID: ' . $item->operator_id }}</div>
+                                                                                @if($opPos)
+                                                                                    <small class="text-muted">{{ $opPos }}</small>
+                                                                                @elseif($opName && $item->operator_id)
+                                                                                    <small class="text-muted">ID: {{ $item->operator_id }}</small>
+                                                                                @endif
+                                                                            </div>
+                                                                        </div>
+                                                                    @else
+                                                                        <span class="text-muted fst-italic small">Belum ditugaskan</span>
+                                                                    @endif
+                                                                </td>
+                                                                <td class="pe-3 text-muted small">{{ $item->remarks ?? '—' }}</td>
                                                             </tr>
                                                             @endforeach
                                                         </tbody>
                                                     </table>
                                                 </div>
                                             </div>
-                                            @if(!$loop->last)
-                                                <hr class="border-light opacity-50 mb-4">
-                                            @endif
                                             @endforeach
                                         </div>
                                     </div>
                                     @endif {{-- end @if($project->unitRequests->isNotEmpty()) inner --}}
+
+                                    {{-- Penggantian Unit (PTU) --}}
+                                    @if($project->unitReplacements->isNotEmpty())
+                                    <div class="card shadow-sm border-0 mb-4 overflow-hidden">
+                                        <div class="card-header bg-gradient bg-warning-subtle border-0 py-3">
+                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-md bg-white rounded-3 d-flex align-items-center justify-content-center me-3 shadow-sm" style="width:48px;height:48px;">
+                                                        <i class="ti ti-replace fs-3 text-warning"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="card-title mb-0 fw-bold">Penggantian Unit (PTU)</h5>
+                                                        <small class="text-muted">Riwayat permintaan penggantian unit untuk project ini</small>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <span class="badge rounded-pill bg-white text-dark border px-3 py-2">
+                                                        <i class="ti ti-file-text text-warning me-1"></i> {{ $project->unitReplacements->count() }} PTU
+                                                    </span>
+                                                    <a href="{{ route('unit-replacements.create') }}?project_id={{ $project->id }}" class="btn btn-sm btn-outline-warning">
+                                                        <i class="ti ti-plus me-1"></i> Buat PTU
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body p-3 p-md-4">
+                                            <div class="table-responsive">
+                                                <table class="table align-middle mb-0">
+                                                    <thead class="text-muted small text-uppercase" style="letter-spacing:.4px;">
+                                                        <tr class="bg-light-subtle">
+                                                            <th class="ps-3">No. PTU</th>
+                                                            <th>UR Asal</th>
+                                                            <th>Tgl. Penggantian</th>
+                                                            <th>Items</th>
+                                                            <th>Status</th>
+                                                            <th>Dibuat Oleh</th>
+                                                            <th class="pe-3 text-end">Aksi</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($project->unitReplacements as $ptu)
+                                                        <tr>
+                                                            <td class="ps-3 fw-semibold">{{ $ptu->replacement_number }}</td>
+                                                            <td>
+                                                                @if($ptu->unitRequest)
+                                                                    <a href="{{ route('unit-requests.show', $ptu->unitRequest->uid) }}" class="text-decoration-none">
+                                                                        {{ $ptu->unitRequest->request_number }}
+                                                                    </a>
+                                                                @else
+                                                                    <span class="text-muted">—</span>
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ $ptu->replacement_date?->format('d M Y') ?? '—' }}</td>
+                                                            <td><span class="badge bg-light text-dark">{{ $ptu->items->count() }} unit</span></td>
+                                                            <td>
+                                                                <span class="badge bg-{{ $ptu->status->color() }}-subtle text-{{ $ptu->status->color() }}">
+                                                                    {{ $ptu->status->label() }}
+                                                                </span>
+                                                            </td>
+                                                            <td class="small">{{ $ptu->creator->name ?? '—' }}</td>
+                                                            <td class="pe-3 text-end">
+                                                                <a href="{{ route('unit-replacements.show', $ptu->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                                    <i class="ti ti-external-link"></i>
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -1168,11 +1517,34 @@
                                                             </thead>
                                                             <tbody>
                                                                 @forelse($formation->members as $idx => $m)
+                                                                    @php
+                                                                        $empProfile = $workforceMembers[$m->employee_id] ?? null;
+                                                                        $empName = $m->employee_name ?: ($empProfile['name'] ?? '—');
+                                                                        $initials = collect(explode(' ', trim($empName)))->filter()->take(2)
+                                                                            ->map(fn($w) => mb_strtoupper(mb_substr($w, 0, 1)))->implode('');
+                                                                        $photoUrl = $m->employee_id ? route('employees.photo', ['id' => $m->employee_id]) : null;
+                                                                    @endphp
                                                                     <tr>
                                                                         <td class="text-muted">{{ $idx + 1 }}</td>
                                                                         <td>
-                                                                            <div class="fw-medium">{{ $m->employee_name }}</div>
-                                                                            <div class="small text-muted">ID: {{ $m->employee_id }}</div>
+                                                                            <div class="d-flex align-items-center gap-2">
+                                                                                <div class="position-relative" style="width:34px;height:34px;flex-shrink:0;">
+                                                                                    <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary fw-semibold position-absolute top-0 start-0"
+                                                                                          style="width:34px;height:34px;font-size:12px;">
+                                                                                        {{ $initials ?: '?' }}
+                                                                                    </span>
+                                                                                    @if($photoUrl)
+                                                                                    <img src="{{ $photoUrl }}" alt="{{ $empName }}"
+                                                                                         class="rounded-circle position-absolute top-0 start-0"
+                                                                                         style="width:34px;height:34px;object-fit:cover;background:#fff;"
+                                                                                         onerror="this.style.display='none'">
+                                                                                    @endif
+                                                                                </div>
+                                                                                <div class="lh-sm">
+                                                                                    <div class="fw-medium">{{ $empName }}</div>
+                                                                                    <div class="small text-muted">ID: {{ $m->employee_id }}</div>
+                                                                                </div>
+                                                                            </div>
                                                                         </td>
                                                                         <td>{{ $m->position_name }}</td>
                                                                         <td>
@@ -1241,7 +1613,7 @@
                                                     </div>
                                                     <p class="mb-1 text-muted small">Alasan: {{ $amendment->reason }}</p>
                                                     <p class="mb-2 text-muted small">Tanggal: {{ $amendment->created_at->format('d M Y, H:i') }} | Pemohon: {{ $amendment->requester->name ?? '-' }}</p>
-                                                    
+
                                                     @if($amendment->histories->isNotEmpty())
                                                         <div class="mt-3">
                                                             <button class="btn btn-sm btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#history-{{ $amendment->id }}">
@@ -1289,7 +1661,7 @@
                             </div>
                         </div>
 
-                        
+
                     </div>
                 </div>
             </div>
@@ -1468,12 +1840,12 @@
                         var imageHtml = `
                             <div class="col-md-4 col-lg-3 mb-3" id="image-${response.image.uid}">
                                 <div class="card h-100 shadow-sm border-0">
-                                    <a href="${response.url}" 
-                                       data-fancybox="gallery" 
+                                    <a href="${response.url}"
+                                       data-fancybox="gallery"
                                        data-type="image"
                                        data-caption="${response.image.file_image}">
-                                        <img src="${response.url}" 
-                                             class="card-img-top rounded" 
+                                        <img src="${response.url}"
+                                             class="card-img-top rounded"
                                              alt="${response.image.file_image}"
                                              style="height: 200px; object-fit: cover; cursor: pointer;">
                                     </a>
@@ -1481,8 +1853,8 @@
                                         <p class="card-text small text-truncate mb-2" title="${response.image.file_image}">
                                             ${response.image.file_image}
                                         </p>
-                                        <button type="button" 
-                                                class="btn btn-sm btn-outline-danger delete-image-btn w-100" 
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger delete-image-btn w-100"
                                                 data-id="${response.image.uid}">
                                             <i class="ti ti-trash"></i> Delete
                                         </button>
@@ -1503,7 +1875,7 @@
             // Delete image
             $('body').on('click', '.delete-image-btn', function() {
                 var imageId = $(this).data('id');
-                
+
                 if (typeof Swal === 'undefined') {
                     if (confirm('Are you sure you want to delete this image?')) {
                         performDelete(imageId);
@@ -1548,7 +1920,7 @@
                                 `);
                             }
                         });
-                        
+
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'success',
@@ -1569,7 +1941,7 @@
                                 if (res.message) errorMessage = res.message;
                             } catch(e) {}
                         }
-                        
+
                         if (typeof Swal !== 'undefined') {
                             Swal.fire({
                                 icon: 'error',
@@ -1620,7 +1992,7 @@
 
             $('.finalize-amendment-btn').on('click', function() {
                 var id = $(this).data('id');
-                
+
                 Swal.fire({
                     title: 'Selesaikan Amandemen?',
                     text: "Project akan dikunci kembali setelah amandemen diselesaikan.",
@@ -1665,7 +2037,7 @@
 
             // Edit Project Logic for Show Page
             var categories = @json($categories);
-            
+
             function toggleSubcategory(categoryId, subcategorySelector) {
                 var category = categories.find(c => c.id == categoryId);
                 if (category && category.code && category.code.toUpperCase() === 'P') {
@@ -1682,12 +2054,12 @@
                     sisa = split[0].length % 3,
                     rupiah = split[0].substr(0, sisa),
                     ribuan = split[0].substr(sisa).match(/\d{3}/gi);
-    
+
                 if (ribuan) {
                     separator = sisa ? '.' : '';
                     rupiah += separator + ribuan.join('.');
                 }
-    
+
                 rupiah = split[1] != undefined ? rupiah + ',' + split[1] : rupiah;
                 return rupiah;
             }
@@ -1702,7 +2074,7 @@
 
             $('body').on('click', '.edit-project-btn', function() {
                 var id = $(this).data('id');
-                
+
                 $.ajax({
                     url: '/projects/' + id + '/data',
                     method: 'GET',
@@ -1728,9 +2100,9 @@
                         $('#edit_bank_account').val(data.bank_account);
                         $('#edit_scope_of_work').val(data.scope_of_work);
                         $('#edit_description').val(data.description);
-                        
+
                         toggleSubcategory(data.project_categories_id, '#edit_project_sub_categories_id');
-                        
+
                         $('#edit_project_form').attr('action', '/projects/' + id);
                         $('#edit_project_offcanvas').offcanvas('show');
                     }
@@ -1742,7 +2114,7 @@
                 var form = $(this);
                 var btn = form.find('.btn-submit');
                 var originalText = btn.text();
-                
+
                 btn.prop('disabled', true);
                 btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Saving...');
 

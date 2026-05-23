@@ -48,11 +48,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('projects/{id}/upload-image', [\App\Http\Controllers\ProjectController::class, 'uploadImage'])->name('projects.upload-image');
     Route::delete('project-images/{id}', [\App\Http\Controllers\ProjectController::class, 'deleteImage'])->name('project-images.delete');
     Route::get('storage/projects/{project_id}/{filename}', [\App\Http\Controllers\ProjectController::class, 'serveImage'])->name('projects.serve-image');
-    
+
     // Project Amendments
     Route::post('project-amendments', [\App\Http\Controllers\ProjectAmendmentController::class, 'store'])->name('project-amendments.store');
     Route::post('project-amendments/{id}/finalize', [\App\Http\Controllers\ProjectAmendmentController::class, 'finalize'])->name('project-amendments.finalize');
-    
+
     // API Routes for Survey Statistics
     Route::prefix('api/v1')->group(function () {
         Route::get('surveys/stats/dashboard', [\App\Http\Controllers\Api\V1\SurveyStatsController::class, 'dashboard']);
@@ -62,6 +62,9 @@ Route::middleware(['auth'])->group(function () {
         // Employee proxy (data dari API_EMPLOYEE) — untuk dropdown Workforce/Unit Formation/Timesheet
         Route::get('employees/search', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'search'])->name('employees.search');
         Route::get('employees/{id}', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'show'])->name('employees.show');
+        Route::get('employees/{id}/photo', [\App\Http\Controllers\Api\V1\EmployeeController::class, 'photo'])
+            ->where('id', '[0-9]+')
+            ->name('employees.photo');
 
         // Unit proxy (data dari API_WORKSHOP) — untuk dropdown Unit Formation/Timesheet
         Route::get('units/search', [\App\Http\Controllers\Api\V1\UnitController::class, 'search'])->name('units.search');
@@ -75,7 +78,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('budgets/{uid}/revise', [\App\Http\Controllers\ProjectBudgetController::class, 'revise'])->name('budgets.revise');
     Route::delete('budgets/{uid}/items/{itemId}', [\App\Http\Controllers\ProjectBudgetController::class, 'deleteItem'])->name('budgets.items.destroy');
     Route::get('projects/{projectId}/budget-history', [\App\Http\Controllers\ProjectBudgetController::class, 'history'])->name('projects.budget-history');
-    
+
     // Approval Flows
     Route::resource('approval-flows', \App\Http\Controllers\ApprovalFlowController::class);
 
@@ -83,12 +86,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('surveyor-flows', [\App\Http\Controllers\SurveyorFlowController::class, 'index'])->name('surveyor-flows.index');
     Route::put('surveyor-flows', [\App\Http\Controllers\SurveyorFlowController::class, 'update'])->name('surveyor-flows.update-all');
     Route::delete('surveyor-flows/{department}', [\App\Http\Controllers\SurveyorFlowController::class, 'destroy'])->name('surveyor-flows.destroy');
-    
+
     // User Management
     Route::resource('roles-permissions', \App\Http\Controllers\RoleController::class);
     Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
     Route::resource('manage-users', \App\Http\Controllers\UserController::class);
-    
+
     // Quotations
     Route::resource('quotations', \App\Http\Controllers\QuotationController::class)->parameters(['quotations' => 'quotation']);
     Route::post('quotations/{quotation}/submit', [\App\Http\Controllers\QuotationController::class, 'submit'])->name('quotations.submit');
@@ -110,17 +113,22 @@ Route::middleware(['auth'])->group(function () {
     Route::post('unit-requests/{unitRequest}/approve', [\App\Http\Controllers\UnitRequestController::class, 'approve'])->name('unit-requests.approve');
     Route::post('unit-requests/{unitRequest}/forward', [\App\Http\Controllers\UnitRequestController::class, 'forwardToWorkshop'])->name('unit-requests.forward');
     Route::get('unit-requests/{unitRequest}/attachment', [\App\Http\Controllers\UnitRequestController::class, 'downloadAttachment'])->name('unit-requests.attachment');
+    Route::get('api/unit-requests/eligible-contracts', [\App\Http\Controllers\UnitRequestController::class, 'eligibleContracts'])->name('unit-requests.eligible-contracts');
 
     // Final Contracts
     Route::resource('final-contracts', \App\Http\Controllers\ContractController::class)->parameters(['final-contracts' => 'uid']);
     Route::get('api/final-contracts/load-data', [\App\Http\Controllers\ContractController::class, 'loadData'])->name('final-contracts.load-data');
+    Route::get('api/final-contracts/eligible-negotiations', [\App\Http\Controllers\ContractController::class, 'eligibleNegotiations'])->name('final-contracts.eligible-negotiations');
 
     // Unit Replacements (PTU)
-    Route::resource('unit-replacements', \App\Http\Controllers\ProjectUnitReplacementController::class)->parameters(['unit-replacements' => 'unitReplacement']);
-    Route::post('unit-replacements/{unitReplacement}/submit', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'submit'])->name('unit-replacements.submit');
-    Route::post('unit-replacements/{unitReplacement}/approve', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'approve'])->name('unit-replacements.approve');
-    Route::post('unit-replacements/{unitReplacement}/complete', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'complete'])->name('unit-replacements.complete');
-    Route::get('unit-replacements/{unitReplacement}/attachment', [\App\Http\Controllers\ProjectUnitReplacementController::class, 'downloadAttachment'])->name('unit-replacements.attachment');
+    Route::get('api/unit-replacements/eligible-unit-requests', [\App\Http\Controllers\UnitReplacementController::class, 'eligibleUnitRequests'])->name('unit-replacements.eligible-unit-requests');
+    Route::get('api/unit-replacements/replacement-candidates', [\App\Http\Controllers\UnitReplacementController::class, 'replacementCandidates'])->name('unit-replacements.replacement-candidates');
+    Route::resource('unit-replacements', \App\Http\Controllers\UnitReplacementController::class)->parameters(['unit-replacements' => 'unitReplacement']);
+    Route::post('unit-replacements/{unitReplacement}/submit', [\App\Http\Controllers\UnitReplacementController::class, 'submit'])->name('unit-replacements.submit');
+    Route::post('unit-replacements/{unitReplacement}/approve', [\App\Http\Controllers\UnitReplacementController::class, 'approve'])->name('unit-replacements.approve');
+    Route::post('unit-replacements/{unitReplacement}/forward', [\App\Http\Controllers\UnitReplacementController::class, 'forwardToWorkshop'])->name('unit-replacements.forward');
+    Route::post('unit-replacements/{unitReplacement}/workshop-decision', [\App\Http\Controllers\UnitReplacementController::class, 'workshopDecision'])->name('unit-replacements.workshop-decision');
+    Route::get('unit-replacements/{unitReplacement}/attachment', [\App\Http\Controllers\UnitReplacementController::class, 'downloadAttachment'])->name('unit-replacements.attachment');
 
     // Work Realization (agregasi billing per periode)
     Route::resource('work-realizations', \App\Http\Controllers\WorkRealizationController::class)
@@ -153,6 +161,33 @@ Route::middleware(['auth'])->group(function () {
     Route::get('receivable-settlements/{receivableSettlement}/attachment', [\App\Http\Controllers\ReceivableSettlementController::class, 'downloadAttachment'])->name('receivable-settlements.attachment');
     Route::get('api/receivable-settlements/project/{project}/invoices', [\App\Http\Controllers\ReceivableSettlementController::class, 'projectInvoices'])->name('receivable-settlements.project-invoices');
     Route::get('api/receivable-settlements/project/{project}/deposits', [\App\Http\Controllers\ReceivableSettlementController::class, 'projectDeposits'])->name('receivable-settlements.project-deposits');
+
+    // Petty Cash — Master Jenis Biaya (CRUD)
+    Route::resource('petty-cash-categories', \App\Http\Controllers\PettyCashExpenseCategoryController::class)
+        ->parameters(['petty-cash-categories' => 'pettyCashCategory'])
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Petty Cash Request (permintaan kas kecil)
+    Route::resource('petty-cash-requests', \App\Http\Controllers\PettyCashRequestController::class)
+        ->parameters(['petty-cash-requests' => 'pettyCashRequest']);
+    Route::post('petty-cash-requests/{pettyCashRequest}/submit',  [\App\Http\Controllers\PettyCashRequestController::class, 'submit'])->name('petty-cash-requests.submit');
+    Route::post('petty-cash-requests/{pettyCashRequest}/approve', [\App\Http\Controllers\PettyCashRequestController::class, 'approve'])->name('petty-cash-requests.approve');
+    Route::post('petty-cash-requests/{pettyCashRequest}/close',   [\App\Http\Controllers\PettyCashRequestController::class, 'close'])->name('petty-cash-requests.close');
+    Route::get('petty-cash-requests/{pettyCashRequest}/attachment', [\App\Http\Controllers\PettyCashRequestController::class, 'downloadAttachment'])->name('petty-cash-requests.attachment');
+
+    // Petty Cash Payment (pembayaran biaya dari Permintaan)
+    Route::resource('petty-cash-payments', \App\Http\Controllers\PettyCashPaymentController::class)
+        ->parameters(['petty-cash-payments' => 'pettyCashPayment']);
+    Route::post('petty-cash-payments/{pettyCashPayment}/submit',  [\App\Http\Controllers\PettyCashPaymentController::class, 'submit'])->name('petty-cash-payments.submit');
+    Route::post('petty-cash-payments/{pettyCashPayment}/approve', [\App\Http\Controllers\PettyCashPaymentController::class, 'approve'])->name('petty-cash-payments.approve');
+    Route::get('petty-cash-payments/{pettyCashPayment}/attachment', [\App\Http\Controllers\PettyCashPaymentController::class, 'downloadAttachment'])->name('petty-cash-payments.attachment');
+
+    // Petty Cash Purchase (pembelian tunai dari Permintaan)
+    Route::resource('petty-cash-purchases', \App\Http\Controllers\PettyCashPurchaseController::class)
+        ->parameters(['petty-cash-purchases' => 'pettyCashPurchase']);
+    Route::post('petty-cash-purchases/{pettyCashPurchase}/submit',  [\App\Http\Controllers\PettyCashPurchaseController::class, 'submit'])->name('petty-cash-purchases.submit');
+    Route::post('petty-cash-purchases/{pettyCashPurchase}/approve', [\App\Http\Controllers\PettyCashPurchaseController::class, 'approve'])->name('petty-cash-purchases.approve');
+    Route::get('petty-cash-purchases/{pettyCashPurchase}/attachment', [\App\Http\Controllers\PettyCashPurchaseController::class, 'downloadAttachment'])->name('petty-cash-purchases.attachment');
 
     // Timesheet Journal (log harian operasional)
     Route::resource('timesheets', \App\Http\Controllers\TimesheetController::class)

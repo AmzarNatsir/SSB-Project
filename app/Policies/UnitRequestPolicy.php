@@ -72,11 +72,31 @@ class UnitRequestPolicy
 
 
     /**
-     * Forward to workshop: only when APPROVED.
+     * Forward to workshop: hanya saat APPROVED, dan hanya untuk:
+     *  - Pembuat permintaan (creator), atau
+     *  - User dengan role yang mengandung "workshop" / "admin" / "manager-project"
      */
     public function forward(User $user, UnitRequest $unitRequest): bool
     {
-        return $unitRequest->canForward();
+        if (! $unitRequest->canForward()) {
+            return false;
+        }
+
+        if ($user->id === $unitRequest->created_by) {
+            return true;
+        }
+
+        // Spatie roles — case-insensitive contains check
+        if (method_exists($user, 'getRoleNames')) {
+            $roles = $user->getRoleNames()->map(fn ($r) => strtolower($r));
+            foreach (['workshop', 'admin', 'super-admin', 'project-manager', 'manager-project'] as $allowed) {
+                if ($roles->contains(fn ($r) => str_contains($r, $allowed))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

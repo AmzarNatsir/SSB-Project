@@ -12,6 +12,7 @@ interface IUnitRequestRepository
     public function update(UnitRequest $unitRequest, array $data): bool;
     public function delete(UnitRequest $unitRequest): bool;
     public function getEligibleProjects(): Collection;
+    public function getEligibleContracts(int $projectId): Collection;
     public function createItems(UnitRequest $unitRequest, array $items): void;
     public function updateItems(UnitRequest $unitRequest, array $items): void;
 }

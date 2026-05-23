@@ -9,15 +9,19 @@ enum UnitRequestStatus: string
     case APPROVED = 'APPROVED';
     case REJECTED = 'REJECTED';
     case FORWARDED_TO_WORKSHOP = 'FORWARDED_TO_WORKSHOP';
+    case APPROVED_FROM_WORKSHOP = 'APPROVED_FROM_WORKSHOP';
+    case REJECTED_FROM_WORKSHOP = 'REJECTED_FROM_WORKSHOP';
 
     public function label(): string
     {
         return match($this) {
             self::DRAFT => 'Draft',
-            self::SUBMITTED => 'Submitted',
-            self::APPROVED => 'Approved',
-            self::REJECTED => 'Rejected',
-            self::FORWARDED_TO_WORKSHOP => 'Forwarded to Workshop',
+            self::SUBMITTED => 'Diajukan',
+            self::APPROVED => 'Disetujui',
+            self::REJECTED => 'Ditolak',
+            self::FORWARDED_TO_WORKSHOP => 'Diteruskan ke Workshop',
+            self::APPROVED_FROM_WORKSHOP => 'Disetujui Workshop',
+            self::REJECTED_FROM_WORKSHOP => 'Ditolak Workshop',
         };
     }
 
@@ -29,6 +33,8 @@ enum UnitRequestStatus: string
             self::APPROVED => 'success',
             self::REJECTED => 'danger',
             self::FORWARDED_TO_WORKSHOP => 'primary',
+            self::APPROVED_FROM_WORKSHOP => 'success',
+            self::REJECTED_FROM_WORKSHOP => 'danger',
         };
     }
 
@@ -39,7 +45,11 @@ enum UnitRequestStatus: string
             self::SUBMITTED => in_array($newStatus, [self::APPROVED, self::REJECTED]),
             self::REJECTED => $newStatus === self::SUBMITTED,
             self::APPROVED => $newStatus === self::FORWARDED_TO_WORKSHOP,
-            self::FORWARDED_TO_WORKSHOP => false,
+            self::FORWARDED_TO_WORKSHOP => in_array($newStatus, [
+                self::APPROVED_FROM_WORKSHOP,
+                self::REJECTED_FROM_WORKSHOP,
+            ]),
+            self::APPROVED_FROM_WORKSHOP, self::REJECTED_FROM_WORKSHOP => false,
         };
     }
 }

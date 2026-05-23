@@ -100,6 +100,73 @@ class EmployeeApiService
     }
 
     /**
+     * Fetch single employee profile via /api/hrd/profile/{id}.
+     * Falls back to find() (cached list) if endpoint fails.
+     */
+    public function getProfile(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+
+        $cacheKey = "employees:profile:{$id}";
+
+        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($id) {
+            try {
+                $response = $this->client()->get("/api/hrd/profile/{$id}");
+                if ($response->successful()) {
+                    $raw = $response->json('data') ?? $response->json() ?? null;
+                    if (is_array($raw) && ! empty($raw)) {
+                        return $this->normalize($raw);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('EmployeeApiService.getProfile error', [
+                    'id' => $id,
+                    'message' => $e->getMessage(),
+                ]);
+            }
+            return $this->find($id);
+        });
+    }
+
+    /**
+     * Stream binary photo from /api/hrd/photo/{id}.
+     * Returns ['content' => string, 'mime' => string] or null when missing.
+     */
+    public function streamPhoto(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+
+        $cacheKey = "employees:photo:{$id}";
+
+        return Cache::remember($cacheKey, $this->cacheTtl, function () use ($id) {
+            try {
+                $response = $this->client()->get("/api/hrd/photo/{$id}");
+                if (! $response->successful()) {
+                    return null;
+                }
+                $body = $response->body();
+                if ($body === '' || strlen($body) < 64) {
+                    return null;
+                }
+                return [
+                    'content' => $body,
+                    'mime' => $response->header('Content-Type') ?: 'image/jpeg',
+                ];
+            } catch (\Throwable $e) {
+                Log::warning('EmployeeApiService.streamPhoto error', [
+                    'id' => $id,
+                    'message' => $e->getMessage(),
+                ]);
+                return null;
+            }
+        });
+    }
+
+    /**
      * Get many employees in one call (for table rendering snapshots).
      *
      * @param  array<int,int>  $ids

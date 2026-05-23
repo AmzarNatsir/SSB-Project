@@ -2,9 +2,10 @@
 
 namespace App\Repositories;
 
+use App\Models\Contract;
 use App\Models\UnitRequest;
 use App\Models\Project;
-use App\Enums\NegotiationStatus;
+use App\Enums\ContractStatus;
 use App\Enums\UnitRequestStatus;
 use App\Repositories\Interfaces\IUnitRequestRepository;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,10 +21,11 @@ class UnitRequestRepository implements IUnitRequestRepository
     {
         return UnitRequest::with([
             'project',
+            'contract.items',
             'quotation.items',
             'negotiation',
+            'items.contractItem',
             'items.quotationItem',
-            // 'items.equipment', // Commented out - Equipment model not yet available
             'creator',
             'approver',
             'approvals.approver'
@@ -40,24 +42,48 @@ class UnitRequestRepository implements IUnitRequestRepository
         return $unitRequest->delete();
     }
 
+    /**
+     * Project yang punya minimal 1 Kontrak ACTIVE yang belum dijadikan Permintaan Unit aktif.
+     *
+     * Per-contract scoping: kalau project punya 2 kontrak dan salah satunya sudah
+     * punya UR, project tetap muncul (cascade ke contract dropdown akan filter).
+     */
     public function getEligibleProjects(): Collection
     {
-        return Project::whereHas('negotiations', function ($query) {
-            $query->where('status', NegotiationStatus::APPROVED);
+        return Project::whereHas('contracts', function ($q) {
+            $q->where('status', ContractStatus::ACTIVE)
+              ->whereDoesntHave('unitRequests', function ($qq) {
+                  $qq->whereIn('status', [
+                      UnitRequestStatus::DRAFT,
+                      UnitRequestStatus::SUBMITTED,
+                      UnitRequestStatus::APPROVED,
+                      UnitRequestStatus::FORWARDED_TO_WORKSHOP,
+                  ]);
+              });
         })
-        ->whereDoesntHave('unitRequests', function ($query) {
-            $query->whereIn('status', [
-                UnitRequestStatus::DRAFT,
-                UnitRequestStatus::SUBMITTED,
-                UnitRequestStatus::APPROVED,
-                UnitRequestStatus::FORWARDED_TO_WORKSHOP
-            ]);
-        })
-        ->with(['negotiations' => function ($query) {
-            $query->where('status', NegotiationStatus::APPROVED)
-                  ->with('quotation.items');
-        }])
-        ->get();
+        ->orderBy('project_name')
+        ->get(['id', 'project_code', 'project_name']);
+    }
+
+    /**
+     * Kontrak ACTIVE milik project yang belum punya Permintaan Unit aktif.
+     * Dipakai oleh cascade dropdown di form create.
+     */
+    public function getEligibleContracts(int $projectId): Collection
+    {
+        return Contract::where('project_id', $projectId)
+            ->where('status', ContractStatus::ACTIVE)
+            ->whereDoesntHave('unitRequests', function ($q) {
+                $q->whereIn('status', [
+                    UnitRequestStatus::DRAFT,
+                    UnitRequestStatus::SUBMITTED,
+                    UnitRequestStatus::APPROVED,
+                    UnitRequestStatus::FORWARDED_TO_WORKSHOP,
+                ]);
+            })
+            ->with('items')
+            ->orderByDesc('start_date')
+            ->get();
     }
 
     public function createItems(UnitRequest $unitRequest, array $items): void

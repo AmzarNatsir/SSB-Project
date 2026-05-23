@@ -18,6 +18,7 @@ class UnitRequest extends Model
         'project_id',
         'quotation_id',
         'negotiation_id',
+        'contract_id',
         'request_number',
         'request_date',
         'mobilization_date',
@@ -66,6 +67,11 @@ class UnitRequest extends Model
     public function negotiation(): BelongsTo
     {
         return $this->belongsTo(Negotiation::class);
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
     }
 
     public function creator(): BelongsTo

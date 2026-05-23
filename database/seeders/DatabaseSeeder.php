@@ -20,5 +20,6 @@ class DatabaseSeeder extends Seeder
         $this->call(RolePermissionSeeder::class);
         $this->call(ProjectBudgetApprovalTierSeeder::class);
         $this->call(UnitRequestApprovalFlowSeeder::class);
+        $this->call(UnitReplacementApprovalFlowSeeder::class);
     }
 }

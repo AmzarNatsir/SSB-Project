@@ -47,12 +47,44 @@ class UnitRequestController extends Controller
     }
 
     /**
-     * Show the create form with eligible projects (APPROVED negotiation).
+     * Show the create form with eligible projects (yang punya Kontrak ACTIVE belum dipakai).
      */
     public function create()
     {
         $eligibleProjects = $this->repo->getEligibleProjects();
         return view('unit-requests.create', compact('eligibleProjects'));
+    }
+
+    /**
+     * AJAX: list kontrak ACTIVE milik project yang belum punya Permintaan Unit aktif.
+     * Cascade dropdown di form create.
+     */
+    public function eligibleContracts(Request $request)
+    {
+        $projectId = $request->integer('project_id');
+        if (! $projectId) {
+            return response()->json(['data' => []]);
+        }
+
+        $contracts = $this->repo->getEligibleContracts($projectId)
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'contract_number' => $c->contract_number,
+                'start_date' => optional($c->start_date)->format('d M Y'),
+                'end_date' => optional($c->end_date)->format('d M Y'),
+                'items' => $c->items->map(fn ($it) => [
+                    'id' => $it->id,
+                    'unit_name' => $it->unit_name,
+                    'equipment_code' => $it->equipment_code,
+                    'qty' => (float) $it->qty,
+                    'unit_price' => (float) $it->unit_price,
+                    'total_price' => (float) $it->total_price,
+                    'duration' => (float) $it->duration,
+                    'duration_unit' => $it->duration_unit ?? 'MONTH',
+                ])->values(),
+            ])->values();
+
+        return response()->json(['data' => $contracts]);
     }
 
     /**
@@ -89,14 +121,69 @@ class UnitRequestController extends Controller
             'approvals.approver',
         ]);
 
+        // Pre-fetch operator profiles (jabatan + photo URL) untuk card Daftar Unit.
+        // Cached di EmployeeApiService → cuma hit HRD API saat cache miss.
+        $operatorIds = $unitRequest->items
+            ->pluck('operator_id')
+            ->filter()
+            ->unique()
+            ->values();
+        $operators = [];
+        if ($operatorIds->isNotEmpty()) {
+            $employeeApi = app(\App\Services\EmployeeApiService::class);
+            foreach ($operatorIds as $opId) {
+                $profile = $employeeApi->getProfile((int) $opId);
+                if ($profile) {
+                    $operators[(int) $opId] = $profile;
+                }
+            }
+        }
+
         // Determine if current user can approve using policy
         $isApprover = auth()->user()->can('approve', $unitRequest);
+        $canForward = auth()->user()->can('forward', $unitRequest);
 
         // Get flow levels for displaying target approvers (User/Role) in history
         $flowService = app(\App\Services\ApprovalFlowService::class);
         $flowLevels = $flowService->getLevels('UnitRequest')->keyBy('level_number');
+        $hasApprovalMatrix = $flowLevels->isNotEmpty();
 
-        return view('unit-requests.show', compact('unitRequest', 'isApprover', 'flowLevels'));
+        // Resolve next approver label utk informasi "Menunggu Approval dari X"
+        $nextApproverLabel = null;
+        $currentLevel = null;
+
+        // Cari level pending sekarang
+        $pending = $unitRequest->approvals->firstWhere('status', 'pending');
+        if ($pending) {
+            $currentLevel = $flowLevels->get($pending->level);
+        } elseif ($hasApprovalMatrix && $unitRequest->canSubmit()) {
+            // Belum di-submit — tampilkan target level 1
+            $currentLevel = $flowLevels->get(1);
+        }
+
+        if ($currentLevel) {
+            $nextApproverLabel = $this->resolveApproverLabel($currentLevel);
+        }
+
+        return view('unit-requests.show', compact(
+            'unitRequest', 'isApprover', 'canForward',
+            'flowLevels', 'hasApprovalMatrix', 'nextApproverLabel',
+            'operators'
+        ));
+    }
+
+    private function resolveApproverLabel(\App\Models\ApprovalFlowLevel $level): string
+    {
+        return match ($level->approver_type) {
+            \App\Enums\ApproverType::USER => 'User: ' . (
+                \App\Models\User::find($level->approver_user_id)?->name ?? 'Unknown'
+            ),
+            \App\Enums\ApproverType::ROLE => 'Role: ' . (
+                \Spatie\Permission\Models\Role::find($level->approver_role_id)?->name ?? 'Unknown'
+            ),
+            \App\Enums\ApproverType::DEPARTMENT => 'Department Head',
+            default => $level->approver_type->label(),
+        };
     }
 
     /**
@@ -178,9 +265,14 @@ class UnitRequestController extends Controller
      */
     public function forwardToWorkshop(UnitRequest $unitRequest)
     {
+        // 3-layer auth: cek policy sebelum memproses
+        if (! auth()->user()->can('forward', $unitRequest)) {
+            return back()->with('error', 'Anda tidak memiliki kewenangan untuk meneruskan permintaan ini ke Workshop.');
+        }
+
         try {
             $this->service->forwardToWorkshop($unitRequest->uid, auth()->id());
-            return back()->with('success', 'Unit request forwarded to Workshop successfully.');
+            return back()->with('success', 'Permintaan Unit berhasil diteruskan ke Workshop.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->with('error', collect($e->errors())->flatten()->first());
         } catch (\Exception $e) {

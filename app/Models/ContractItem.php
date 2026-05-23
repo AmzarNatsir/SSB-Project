@@ -14,12 +14,16 @@ class ContractItem extends Model
         'contract_id',
         'unit_name',
         'unit_id',
+        'uid_unit',
+        'equipment_code',
         'qty',
         'unit_price',
         'total_price',
         'duration',
+        'duration_unit',
         'fuel_cost',
         'tax',
+        'notes',
     ];
 
     protected $casts = [

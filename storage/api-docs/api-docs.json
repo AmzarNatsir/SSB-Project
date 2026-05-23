@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Unit Request API",
-        "description": "API for managing Unit Requests for Workshop use.",
+        "title": "Project Documentation API",
+        "description": "API untuk integrasi dengan aplikasi Workshop. Endpoint ini dipakai aplikasi terpisah untuk menerima Permintaan Unit yang sudah diteruskan, menyetujui penyiapan unit, dan mengupdate kesiapan tiap item.",
         "version": "1.0.0"
     },
     "servers": [
@@ -12,29 +12,47 @@
         }
     ],
     "paths": {
-        "/unit-requests": {
+        "/unit-replacements": {
             "get": {
                 "tags": [
-                    "Unit Request"
+                    "Unit Replacement"
                 ],
-                "summary": "List unit requests forwarded to workshop",
-                "operationId": "d8dbfc38a85629f8ef9821902c9feb2a",
+                "summary": "List Penggantian Unit (PTU) yang sudah diteruskan ke Workshop",
+                "description": "Default-nya hanya menampilkan status FORWARDED_TO_WORKSHOP. Gunakan parameter ?status=APPROVED_FROM_WORKSHOP, ?status=REJECTED_FROM_WORKSHOP, kombinasi (comma-separated), atau ?status=all untuk mengubah filter.",
+                "operationId": "962795c9fdf453da98b798378b8536fa",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter status. Default: FORWARDED_TO_WORKSHOP. Boleh comma-separated atau 'all'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "FORWARDED_TO_WORKSHOP"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (1-100). Default: 25.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of forwarded unit requests with items",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
+                        "description": "List PTU (paginated)"
                     },
                     "401": {
                         "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Parameter status tidak valid"
                     }
                 },
                 "security": [
@@ -44,37 +62,31 @@
                 ]
             }
         },
-        "/unit-requests/{uid}": {
+        "/unit-replacements/{uid}": {
             "get": {
                 "tags": [
-                    "Unit Request"
+                    "Unit Replacement"
                 ],
-                "summary": "Get details of a specific unit request",
-                "operationId": "3124d7907444dc5a4886bf219792503f",
+                "summary": "Detail satu PTU",
+                "operationId": "a0312ead7ffab271916860577042ecc5",
                 "parameters": [
                     {
                         "name": "uid",
                         "in": "path",
-                        "description": "UID of the unit request",
+                        "description": "UID (UUID) PTU",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "format": "uuid"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Unit request details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Detail PTU"
                     },
                     "404": {
-                        "description": "Not found"
+                        "description": "Tidak ditemukan"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -87,18 +99,94 @@
                 ]
             }
         },
-        "/unit-requests/items/{id}/ready": {
+        "/unit-replacements/{uid}/status": {
             "patch": {
                 "tags": [
-                    "Unit Request"
+                    "Unit Replacement"
                 ],
-                "summary": "Update readiness status of a unit request item",
-                "operationId": "4f4e936183ba8bb674fe3b26bded6590",
+                "summary": "Update status PTU",
+                "description": "Workshop memakai endpoint ini untuk menyetujui atau menolak PTU yang diteruskan. Hanya transisi yang diizinkan UnitReplacementStatus::canTransitionTo() yang diterima.",
+                "operationId": "828b2c80e9120e2855614afb0a7e4b13",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "UID (UUID) PTU",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "Status tujuan. Untuk Workshop: APPROVED_FROM_WORKSHOP atau REJECTED_FROM_WORKSHOP.",
+                                        "type": "string",
+                                        "enum": [
+                                            "DRAFT",
+                                            "SUBMITTED",
+                                            "APPROVED",
+                                            "REJECTED",
+                                            "FORWARDED_TO_WORKSHOP",
+                                            "APPROVED_FROM_WORKSHOP",
+                                            "REJECTED_FROM_WORKSHOP"
+                                        ],
+                                        "example": "APPROVED_FROM_WORKSHOP"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Unit pengganti siap kirim",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status berhasil diupdate"
+                    },
+                    "422": {
+                        "description": "Status tidak valid atau transisi tidak diizinkan"
+                    },
+                    "404": {
+                        "description": "PTU tidak ditemukan"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/unit-replacements/items/{id}/ready": {
+            "patch": {
+                "tags": [
+                    "Unit Replacement"
+                ],
+                "summary": "Update kesiapan unit pengganti per item",
+                "description": "Hanya bisa dipanggil saat parent PTU berstatus FORWARDED_TO_WORKSHOP atau APPROVED_FROM_WORKSHOP.",
+                "operationId": "5b3811ee7cf9306c8fa959c4dfe0356a",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID of the unit request item",
+                        "description": "ID unit_replacement_items",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -120,11 +208,18 @@
                                     },
                                     "operator_id": {
                                         "type": "integer",
-                                        "example": 1
+                                        "example": 12,
+                                        "nullable": true
                                     },
                                     "operator_name": {
                                         "type": "string",
-                                        "example": "Operator Name"
+                                        "example": "Budi Santoso",
+                                        "nullable": true
+                                    },
+                                    "remarks": {
+                                        "type": "string",
+                                        "example": "Unit ready, ready to mob",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -134,17 +229,322 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Readiness status updated successfully",
+                        "description": "Kesiapan unit berhasil diupdate"
+                    },
+                    "422": {
+                        "description": "Parent PTU tidak dalam status yang diizinkan"
+                    },
+                    "404": {
+                        "description": "Item tidak ditemukan"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Generate Bearer Token (Sanctum) — sementara",
+                "description": "Endpoint sementara untuk testing. Login dengan email & password user yang sudah ada, dapatkan Bearer Token untuk dipakai di tombol Authorize di atas.",
+                "operationId": "2ed45531e4e8326a9e2713d5925fb861",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@ssb.test"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login berhasil — token diterbitkan",
                         "content": {
                             "application/json": {
                                 "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abcdef1234567890..."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Admin"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "admin@ssb.test"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
                                     "type": "object"
                                 }
                             }
                         }
                     },
+                    "401": {
+                        "description": "Invalid credentials"
+                    },
+                    "422": {
+                        "description": "Validasi gagal"
+                    }
+                }
+            }
+        },
+        "/unit-requests": {
+            "get": {
+                "tags": [
+                    "Unit Request"
+                ],
+                "summary": "List Permintaan Unit yang sudah diteruskan ke Workshop",
+                "description": "Default-nya hanya menampilkan status FORWARDED_TO_WORKSHOP. Gunakan parameter ?status=APPROVED_FROM_WORKSHOP, ?status=REJECTED_FROM_WORKSHOP, kombinasi (comma-separated), atau ?status=all untuk mengubah filter.",
+                "operationId": "d8dbfc38a85629f8ef9821902c9feb2a",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter status. Default: FORWARDED_TO_WORKSHOP. Boleh comma-separated (mis. FORWARDED_TO_WORKSHOP,APPROVED_FROM_WORKSHOP) atau 'all'.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "FORWARDED_TO_WORKSHOP"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (1-100). Default: 25.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List Permintaan Unit (paginated)"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Parameter status tidak valid"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/unit-requests/{uid}": {
+            "get": {
+                "tags": [
+                    "Unit Request"
+                ],
+                "summary": "Detail satu Permintaan Unit",
+                "operationId": "3124d7907444dc5a4886bf219792503f",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "UID (UUID) Permintaan Unit",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail Permintaan Unit"
+                    },
                     "404": {
-                        "description": "Item not found"
+                        "description": "Tidak ditemukan"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/unit-requests/{uid}/status": {
+            "patch": {
+                "tags": [
+                    "Unit Request"
+                ],
+                "summary": "Update status Permintaan Unit",
+                "description": "Workshop memakai endpoint ini untuk menyetujui atau menolak Permintaan Unit yang diteruskan. Hanya transisi yang diizinkan UnitRequestStatus::canTransitionTo() yang diterima (mis. FORWARDED_TO_WORKSHOP → APPROVED_FROM_WORKSHOP / REJECTED_FROM_WORKSHOP).",
+                "operationId": "9be12970a4f84e3227bf2a557f3bfe3d",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "UID (UUID) Permintaan Unit",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "Status tujuan. Untuk Workshop: APPROVED_FROM_WORKSHOP (menyetujui penyiapan unit) atau REJECTED_FROM_WORKSHOP (menolak permintaan).",
+                                        "type": "string",
+                                        "enum": [
+                                            "DRAFT",
+                                            "SUBMITTED",
+                                            "APPROVED",
+                                            "REJECTED",
+                                            "FORWARDED_TO_WORKSHOP",
+                                            "APPROVED_FROM_WORKSHOP",
+                                            "REJECTED_FROM_WORKSHOP"
+                                        ],
+                                        "example": "APPROVED_FROM_WORKSHOP"
+                                    },
+                                    "notes": {
+                                        "description": "Catatan opsional dari Workshop (mis. alasan penolakan).",
+                                        "type": "string",
+                                        "example": "Unit siap kirim per 2026-05-25",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status berhasil diupdate"
+                    },
+                    "422": {
+                        "description": "Status tidak valid atau transisi tidak diizinkan"
+                    },
+                    "404": {
+                        "description": "Permintaan Unit tidak ditemukan"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/unit-requests/items/{id}/ready": {
+            "patch": {
+                "tags": [
+                    "Unit Request"
+                ],
+                "summary": "Update kesiapan unit per item (unit_ready, operator_id, operator_name)",
+                "description": "Hanya bisa dipanggil saat parent UnitRequest berstatus FORWARDED_TO_WORKSHOP atau APPROVED_FROM_WORKSHOP.",
+                "operationId": "4f4e936183ba8bb674fe3b26bded6590",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID unit_request_items",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "unit_ready"
+                                ],
+                                "properties": {
+                                    "unit_ready": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "operator_id": {
+                                        "type": "integer",
+                                        "example": 12,
+                                        "nullable": true
+                                    },
+                                    "operator_name": {
+                                        "type": "string",
+                                        "example": "Budi Santoso",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Kesiapan unit berhasil diupdate"
+                    },
+                    "422": {
+                        "description": "Parent UnitRequest tidak dalam status yang diizinkan"
+                    },
+                    "404": {
+                        "description": "Item tidak ditemukan"
                     },
                     "401": {
                         "description": "Unauthenticated"
@@ -168,6 +568,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Unit Replacement",
+            "description": "Unit Replacement"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
         {
             "name": "Unit Request",
             "description": "Unit Request"

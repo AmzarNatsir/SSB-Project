@@ -36,9 +36,9 @@ class ProjectController extends Controller
                         'ON HOLD' => ['color' => 'bg-warning', 'text' => 'On Hold'],
                         'CANCELLED' => ['color' => 'bg-danger', 'text' => 'Cancelled'],
                     ];
-                    
+
                     $config = $statusConfig[$row->project_status] ?? ['color' => 'bg-secondary', 'text' => $row->project_status];
-                    
+
                     return '<div class="d-flex align-items-center">
                         <div class="progress me-2" style="width: 80px; height: 6px;">
                             <div class="progress-bar '.$config['color'].'" role="progressbar" style="width: 100%"></div>
@@ -50,35 +50,35 @@ class ProjectController extends Controller
                     $detailBtn = '<a href="/projects/'.$row->uid.'" class="btn btn-sm btn-info me-1">
                         <i class="ti ti-eye"></i>
                     </a>';
-                    
+
                     $editBtn = '';
                     $deleteBtn = '';
-                    
+
                     if ($row->project_status === 'NOT STARTED' || $row->project_status === 'AMENDMENT') {
-                        $editBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-warning me-1 edit-project-btn" 
+                        $editBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-warning me-1 edit-project-btn"
                             data-id="'.$row->uid.'">
                             <i class="ti ti-edit"></i>
                         </a>';
                     }
 
                     if ($row->project_status === 'NOT STARTED') {
-                        $deleteBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-danger delete-project-btn" 
+                        $deleteBtn = '<a href="javascript:void(0);" class="btn btn-sm btn-danger delete-project-btn"
                             data-id="'.$row->uid.'">
                             <i class="ti ti-trash"></i>
                         </a>';
                     }
-                    
+
                     return $detailBtn . $editBtn . $deleteBtn;
                 })
                 ->rawColumns(['action', 'project_status'])
                 ->make(true);
         }
-        
+
         $categories = ProjectCategory::all();
         $subCategories = ProjectSubCategory::all();
         $users = User::all();
         $equipmentRates = EquimentRentalRatesHM::all();
-        
+
         return view('projects.index', compact('categories', 'subCategories', 'users', 'equipmentRates'));
     }
 
@@ -123,7 +123,16 @@ class ProjectController extends Controller
                     $query->where('status', \App\Enums\ContractStatus::ACTIVE)->with('items');
                 },
                 'unitRequests' => function ($query) {
-                    $query->where('status', \App\Enums\UnitRequestStatus::FORWARDED_TO_WORKSHOP)->with('items');
+                    $query->where('status', \App\Enums\UnitRequestStatus::APPROVED_FROM_WORKSHOP)
+                          ->with(['items.replacedByItem.unitReplacement:id,uid,replacement_number', 'creator:id,name'])
+                          ->latest();
+                },
+                'unitReplacements' => function ($query) {
+                    $query->with([
+                        'unitRequest:id,uid,request_number',
+                        'items',
+                        'creator:id,name',
+                    ])->latest();
                 }
             ])
             ->where('uid', $id)
@@ -159,7 +168,42 @@ class ProjectController extends Controller
             ->latest('effective_date')
             ->get();
 
-        return view('projects.show', compact('project', 'categories', 'subCategories', 'users', 'equipmentRates', 'workforceFormations', 'unitFormations'));
+        // Pre-fetch operator profiles untuk Deployed Units (APPROVED_FROM_WORKSHOP)
+        $deployedOperatorIds = $project->unitRequests
+            ->flatMap->items
+            ->pluck('operator_id')
+            ->filter()
+            ->unique()
+            ->values();
+        $deployedOperators = [];
+        $workforceMembers = [];
+        $employeeApi = app(\App\Services\EmployeeApiService::class);
+        if ($deployedOperatorIds->isNotEmpty()) {
+            foreach ($deployedOperatorIds as $opId) {
+                $profile = $employeeApi->getProfile((int) $opId);
+                if ($profile) {
+                    $deployedOperators[(int) $opId] = $profile;
+                }
+            }
+        }
+
+        // Pre-fetch workforce member profiles untuk tab Work Force
+        $workforceMemberIds = $workforceFormations
+            ->flatMap->members
+            ->pluck('employee_id')
+            ->filter()
+            ->unique()
+            ->values();
+        if ($workforceMemberIds->isNotEmpty()) {
+            foreach ($workforceMemberIds as $empId) {
+                $profile = $employeeApi->getProfile((int) $empId);
+                if ($profile) {
+                    $workforceMembers[(int) $empId] = $profile;
+                }
+            }
+        }
+
+        return view('projects.show', compact('project', 'categories', 'subCategories', 'users', 'equipmentRates', 'workforceFormations', 'unitFormations', 'deployedOperators', 'workforceMembers'));
     }
 
     /**
@@ -170,7 +214,7 @@ class ProjectController extends Controller
         $project = Project::with(['category', 'subCategory', 'pic', 'equipmentRentalRate'])
             ->where('uid', $id)
             ->firstOrFail();
-        
+
         return response()->json($project);
     }
 
@@ -206,7 +250,7 @@ class ProjectController extends Controller
 
             // Identify changed fields
             $changes = array_diff_assoc($newData, $oldData);
-            
+
             if (!empty($changes)) {
                 $activeAmendment = ProjectAmendment::where('project_id', $project->id)
                     ->where('status', 'IN_PROGRESS')
@@ -236,7 +280,7 @@ class ProjectController extends Controller
     public function destroy(string $id)
     {
         $project = Project::where('uid', $id)->firstOrFail();
-        
+
         // Only allow deletion if status is NOT STARTED
         if ($project->project_status !== 'NOT STARTED') {
             return response()->json([
@@ -263,13 +307,13 @@ class ProjectController extends Controller
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $fileName = time() . '_' . $file->getClientOriginalName();
-            
+
             // Create directory if it doesn't exist
             $directory = storage_path('projects/' . $project->id);
             if (!file_exists($directory)) {
                 mkdir($directory, 0755, true);
             }
-            
+
             // Move file to storage/projects/{project_id}/
             $filePath = 'projects/' . $project->id . '/' . $fileName;
             $file->move(storage_path('projects/' . $project->id), $fileName);
@@ -300,11 +344,11 @@ class ProjectController extends Controller
     {
         \Log::info('Deleting image', ['uid' => $id]);
         $image = ProjectImage::where('uid', $id)->firstOrFail();
-        
+
         // Delete file from storage
         $fullPath = storage_path($image->file_path);
         \Log::info('Delete path', ['path' => $fullPath, 'exists' => file_exists($fullPath)]);
-        
+
         if (file_exists($fullPath)) {
             unlink($fullPath);
         }
@@ -321,7 +365,7 @@ class ProjectController extends Controller
     {
         $path = storage_path('projects/' . $project_id . '/' . $filename);
         \Log::info('Serving image', ['path' => $path, 'exists' => file_exists($path)]);
-        
+
         if (!file_exists($path)) {
             abort(404);
         }
@@ -335,12 +379,12 @@ class ProjectController extends Controller
     {
         $term = $request->term;
         $query = Project::query()->where('project_status', 'COMPLETED');
-        
+
         if ($term) {
             $query->where('project_name', 'LIKE', '%' . $term . '%')
                   ->orWhere('project_number', 'LIKE', '%' . $term . '%');
         }
-        
+
         $projects = $query->select('id', 'project_name', 'project_number', 'project_value')
                         ->limit(20)
                         ->get()
@@ -353,7 +397,7 @@ class ProjectController extends Controller
                                 'project_value' => $project->project_value
                             ];
                         });
-                        
+
         return response()->json(['results' => $projects]);
     }
 }

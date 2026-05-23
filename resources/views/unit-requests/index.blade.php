@@ -1,22 +1,23 @@
 @extends('layout.mainlayout')
-@section('title', 'Unit Request Dashboard')
+@section('title', 'Permintaan Unit')
 @section('content')
 <div class="page-wrapper">
     <div class="content">
         <!-- Page Header -->
         <div class="d-md-flex d-block align-items-center justify-content-between mb-4">
             <div class="my-auto mb-2">
-                <h3 class="page-title mb-1">Unit Request</h3>
-                <nav>
+                <h3 class="page-title mb-1">Permintaan Unit</h3>
+                <p class="text-muted small mb-0">Permintaan unit untuk proyek yang sudah disepakati harganya. Items otomatis dari Penawaran Harga.</p>
+                <nav class="mt-1">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active">Unit Requests</li>
+                        <li class="breadcrumb-item active">Permintaan Unit</li>
                     </ol>
                 </nav>
             </div>
             <div class="d-flex my-xl-auto right-content align-items-center flex-wrap gap-2">
                 <a href="{{ route('unit-requests.create') }}" class="btn btn-primary btn-label">
-                    <i class="ti ti-plus label-icon align-middle fs-16 me-2"></i>New Unit Request
+                    <i class="ti ti-plus label-icon align-middle fs-16 me-2"></i>Buat Permintaan
                 </a>
             </div>
         </div>
@@ -41,7 +42,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Total Requests</p>
+                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Total Permintaan</p>
                             </div>
                             <div class="flex-shrink-0">
                                 <div class="avatar-sm">
@@ -65,7 +66,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Pending Approval</p>
+                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Menunggu Approval</p>
                             </div>
                             <div class="flex-shrink-0">
                                 <div class="avatar-sm">
@@ -89,7 +90,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Approved</p>
+                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Disetujui</p>
                             </div>
                             <div class="flex-shrink-0">
                                 <div class="avatar-sm">
@@ -113,7 +114,7 @@
                     <div class="card-body">
                         <div class="d-flex align-items-center">
                             <div class="flex-grow-1 overflow-hidden">
-                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Forwarded to Workshop</p>
+                                <p class="text-uppercase fw-medium text-muted text-truncate mb-0">Diteruskan ke Workshop</p>
                             </div>
                             <div class="flex-shrink-0">
                                 <div class="avatar-sm">
@@ -140,7 +141,7 @@
                     <div class="card-header border-bottom-dashed">
                         <div class="row g-4 align-items-center">
                             <div class="col-sm">
-                                <h5 class="card-title mb-0">Unit Requests</h5>
+                                <h5 class="card-title mb-0">Daftar Permintaan Unit</h5>
                             </div>
                         </div>
                     </div>
@@ -149,14 +150,14 @@
                             <table class="table table-nowrap align-middle">
                                 <thead class="text-muted table-light">
                                     <tr class="text-uppercase">
-                                        <th>Request #</th>
-                                        <th>Project</th>
-                                        <th>Request Date</th>
-                                        <th>Mobilization Date</th>
-                                        <th>Items</th>
+                                        <th>No. Permintaan</th>
+                                        <th>Proyek</th>
+                                        <th>Tgl. Permintaan</th>
+                                        <th>Tgl. Mobilisasi</th>
+                                        <th>Unit</th>
                                         <th>Status</th>
-                                        <th>Created By</th>
-                                        <th>Actions</th>
+                                        <th>Dibuat Oleh</th>
+                                        <th>Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -181,7 +182,7 @@
                                         <td>{{ $ur->mobilization_date ? $ur->mobilization_date->format('d M Y') : '-' }}</td>
                                         <td>
                                             <span class="badge bg-secondary-subtle text-secondary">
-                                                {{ $ur->items_count ?? $ur->items()->count() }} units
+                                                {{ $ur->items_count ?? $ur->items()->count() }} unit
                                             </span>
                                         </td>
                                         <td>
@@ -199,7 +200,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
                                                         <a class="dropdown-item" href="{{ route('unit-requests.show', $ur->uid) }}">
-                                                            <i class="ti ti-eye align-bottom me-2 text-muted"></i> View
+                                                            <i class="ti ti-eye align-bottom me-2 text-muted"></i> Lihat
                                                         </a>
                                                     </li>
                                                     @if($ur->isEditable())
@@ -221,10 +222,10 @@
                                                     <i class="ti ti-tools"></i>
                                                 </div>
                                             </div>
-                                            <h5>No Unit Requests Found</h5>
-                                            <p class="text-muted">Create a new unit request from an approved negotiation.</p>
+                                            <h5>Belum ada Permintaan Unit</h5>
+                                            <p class="text-muted">Buat dari proyek yang sudah memiliki Negosiasi & Penawaran Harga yang Disetujui.</p>
                                             <a href="{{ route('unit-requests.create') }}" class="btn btn-primary btn-sm">
-                                                <i class="ti ti-plus me-1"></i> Create New
+                                                <i class="ti ti-plus me-1"></i> Buat Permintaan
                                             </a>
                                         </td>
                                     </tr>

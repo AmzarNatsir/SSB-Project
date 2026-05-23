@@ -66,6 +66,11 @@ class Contract extends Model
         return $this->hasMany(ContractItem::class);
     }
 
+    public function unitRequests(): HasMany
+    {
+        return $this->hasMany(UnitRequest::class);
+    }
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

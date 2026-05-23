@@ -97,17 +97,17 @@
     </div>
 
     <div class="table-responsive">
-        <table class="table table-bordered align-middle" id="members-table">
+        <table class="table table-bordered align-middle" id="members-table" style="min-width: 1200px;">
             <thead class="table-light">
                 <tr class="text-uppercase small">
-                    <th style="width:25%">Karyawan</th>
-                    <th>Posisi</th>
-                    <th style="width:10%">Upah Harian</th>
-                    <th style="width:10%">Tunjangan</th>
-                    <th style="width:8%">Shift</th>
-                    <th style="width:11%">Mulai Tugas</th>
-                    <th style="width:11%">Selesai Tugas</th>
-                    <th style="width:5%"></th>
+                    <th style="min-width:280px;">Karyawan</th>
+                    <th style="min-width:160px;">Posisi</th>
+                    <th style="min-width:170px;">Upah Harian</th>
+                    <th style="min-width:170px;">Tunjangan</th>
+                    <th style="min-width:120px;">Shift</th>
+                    <th style="min-width:160px;">Mulai Tugas</th>
+                    <th style="min-width:160px;">Selesai Tugas</th>
+                    <th style="width:60px;"></th>
                 </tr>
             </thead>
             <tbody id="members-body">

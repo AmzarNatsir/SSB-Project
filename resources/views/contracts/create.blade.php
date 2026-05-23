@@ -35,17 +35,28 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-12 mb-3">
-                                        <label class="form-label">Select Project (Negotiation Approved) <span class="text-danger">*</span></label>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Pilih Proyek <span class="text-danger">*</span></label>
                                         <select name="project_id" id="project_id" class="select form-control @error('project_id') is-invalid @enderror" required>
-                                            <option value="">-- Select Project --</option>
+                                            <option value="">-- Pilih Proyek --</option>
                                             @foreach($projects as $project)
                                                 <option value="{{ $project->id }}" {{ old('project_id') == $project->id ? 'selected' : '' }}>
                                                     {{ $project->project_number }} - {{ $project->project_name }}
                                                 </option>
                                             @endforeach
                                         </select>
+                                        <small class="text-muted">Hanya proyek dengan negosiasi Disetujui yang belum memiliki kontrak.</small>
                                         @error('project_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Pilih Negosiasi <span class="text-danger">*</span></label>
+                                        <select name="negotiation_id" id="negotiation_id" class="form-control @error('negotiation_id') is-invalid @enderror" required disabled>
+                                            <option value="">-- Pilih proyek dulu --</option>
+                                        </select>
+                                        <small class="text-muted">1 negosiasi = 1 kontrak. Pilih negosiasi yang belum dikonversi.</small>
+                                        @error('negotiation_id')
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -158,9 +169,51 @@
     @push('scripts')
     <script>
         $(document).ready(function() {
+            const oldNegotiationId = "{{ old('negotiation_id') }}";
+
             $('#project_id').on('change', function() {
                 const projectId = $(this).val();
-                if (!projectId) {
+                resetForm();
+                resetNegotiationDropdown();
+                if (!projectId) return;
+
+                $('#negotiation_id').prop('disabled', true).html('<option value="">Memuat...</option>');
+
+                $.ajax({
+                    url: "{{ route('final-contracts.eligible-negotiations') }}",
+                    method: "GET",
+                    data: { project_id: projectId },
+                    success: function(response) {
+                        const list = response.data || [];
+                        if (list.length === 0) {
+                            $('#negotiation_id').html('<option value="">Tidak ada negosiasi tersedia</option>').prop('disabled', true);
+                            return;
+                        }
+
+                        let opts = '<option value="">-- Pilih Negosiasi --</option>';
+                        list.forEach(function(n) {
+                            const sel = (oldNegotiationId && String(n.id) === String(oldNegotiationId)) ? ' selected' : '';
+                            opts += `<option value="${n.id}"${sel}>${n.negotiation_number} — ${n.negotiation_date} (Rp ${formatNumber(n.final_agreed_value)})</option>`;
+                        });
+                        $('#negotiation_id').html(opts).prop('disabled', false);
+
+                        // Auto-trigger kalau cuma 1 opsi atau ada old value
+                        if (list.length === 1) {
+                            $('#negotiation_id').val(list[0].id).trigger('change');
+                        } else if (oldNegotiationId) {
+                            $('#negotiation_id').trigger('change');
+                        }
+                    },
+                    error: function() {
+                        $('#negotiation_id').html('<option value="">Gagal memuat</option>').prop('disabled', true);
+                    }
+                });
+            });
+
+            $('#negotiation_id').on('change', function() {
+                const projectId = $('#project_id').val();
+                const negotiationId = $(this).val();
+                if (!projectId || !negotiationId) {
                     resetForm();
                     return;
                 }
@@ -170,7 +223,7 @@
                 $.ajax({
                     url: "{{ route('final-contracts.load-data') }}",
                     method: "GET",
-                    data: { project_id: projectId },
+                    data: { project_id: projectId, negotiation_id: negotiationId },
                     success: function(response) {
                         $('#client_name').val(response.user_name);
                         $('#client_code').val(response.user_code);
@@ -178,14 +231,14 @@
                         $('#project_location').val(response.project_location);
                         $('#bank_account').val(response.bank_account);
                         $('#scope_of_work').val(response.scope_of_work);
-                        
+
                         renderItems(response.items, response.agreed_value);
                     },
                     error: function(xhr) {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Error Loading Data',
-                            text: xhr.responseJSON?.error || 'Something went wrong.'
+                            title: 'Gagal Memuat Data',
+                            text: xhr.responseJSON?.error || 'Terjadi kesalahan.'
                         });
                         resetForm();
                     }
@@ -212,19 +265,23 @@
 
             function resetForm() {
                 $('#client_name, #client_code, #client_address, #project_location, #bank_account, #scope_of_work').val('');
-                $('#items_body').html('<tr><td colspan="5" class="text-center py-4 text-muted small">Select a project to load items.</td></tr>');
+                $('#items_body').html('<tr><td colspan="5" class="text-center py-4 text-muted small">Pilih proyek & negosiasi untuk memuat data.</td></tr>');
                 $('#items_foot').hide();
             }
 
+            function resetNegotiationDropdown() {
+                $('#negotiation_id').html('<option value="">-- Pilih proyek dulu --</option>').prop('disabled', true);
+            }
+
             function showLoading() {
-                $('#items_body').html('<tr><td colspan="5" class="text-center py-4"><span class="spinner-border spinner-border-sm me-1 text-primary"></span> Loading data...</td></tr>');
+                $('#items_body').html('<tr><td colspan="5" class="text-center py-4"><span class="spinner-border spinner-border-sm me-1 text-primary"></span> Memuat data...</td></tr>');
             }
 
             function formatNumber(num) {
                 return new Number(num).toLocaleString('id-ID');
             }
 
-            // Trigger change if there's an old value (e.g. after validation error)
+            // Trigger change kalau ada old value (setelah validation error)
             if ($('#project_id').val()) {
                 $('#project_id').trigger('change');
             }

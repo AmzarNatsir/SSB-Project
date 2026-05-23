@@ -13,6 +13,7 @@ class UnitRequestItem extends Model
     protected $fillable = [
         'unit_request_id',
         'quotation_item_id',
+        'contract_item_id',
         'equipment_id',
         'unit_name',
         'qty',
@@ -21,12 +22,15 @@ class UnitRequestItem extends Model
         'unit_ready',
         'operator_id',
         'operator_name',
+        'replaced_at',
+        'replaced_by_item_id',
     ];
 
     protected $casts = [
         'qty' => 'integer',
         'duration_days' => 'integer',
         'unit_ready' => 'boolean',
+        'replaced_at' => 'datetime',
     ];
 
 
@@ -39,6 +43,21 @@ class UnitRequestItem extends Model
     public function quotationItem(): BelongsTo
     {
         return $this->belongsTo(QuotationItem::class);
+    }
+
+    public function contractItem(): BelongsTo
+    {
+        return $this->belongsTo(ContractItem::class);
+    }
+
+    public function replacedByItem(): BelongsTo
+    {
+        return $this->belongsTo(UnitReplacementItem::class, 'replaced_by_item_id');
+    }
+
+    public function isReplaced(): bool
+    {
+        return $this->replaced_at !== null;
     }
 
     // Equipment relationship - uncomment when Equipment model is available

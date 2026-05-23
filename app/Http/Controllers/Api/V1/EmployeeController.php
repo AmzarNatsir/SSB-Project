@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\EmployeeApiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class EmployeeController extends Controller
 {
@@ -42,12 +43,31 @@ class EmployeeController extends Controller
      */
     public function show(int $id): JsonResponse
     {
-        $emp = $this->employees->find($id);
+        $emp = $this->employees->getProfile($id);
 
         if (! $emp) {
             return response()->json(['message' => 'Employee not found'], 404);
         }
 
         return response()->json(['data' => $emp]);
+    }
+
+    /**
+     * GET /employees/{id}/photo
+     * Proxy ke API HRD /api/hrd/photo/{id}. Return 404 jika tidak ada
+     * sehingga frontend bisa fallback ke initial avatar via <img onerror>.
+     */
+    public function photo(int $id): Response
+    {
+        $photo = $this->employees->streamPhoto($id);
+
+        if (! $photo) {
+            abort(404);
+        }
+
+        return response($photo['content'], 200, [
+            'Content-Type' => $photo['mime'],
+            'Cache-Control' => 'public, max-age=300',
+        ]);
     }
 }

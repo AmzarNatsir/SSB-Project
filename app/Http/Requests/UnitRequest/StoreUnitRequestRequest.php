@@ -15,6 +15,7 @@ class StoreUnitRequestRequest extends FormRequest
     {
         return [
             'project_id'        => ['required', 'integer', 'exists:projects,id'],
+            'contract_id'       => ['required', 'integer', 'exists:contracts,id'],
             'request_date'      => ['required', 'date'],
             'mobilization_date' => ['required', 'date', 'after_or_equal:request_date'],
             'notes'             => ['nullable', 'string', 'max:2000'],
@@ -25,13 +26,15 @@ class StoreUnitRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'project_id.required'        => 'Please select a project.',
-            'project_id.exists'          => 'Selected project is invalid.',
-            'request_date.required'      => 'Request date is required.',
-            'mobilization_date.required' => 'Mobilization date is required.',
-            'mobilization_date.after_or_equal' => 'Mobilization date must be on or after the request date.',
-            'attachment.mimes'           => 'Attachment must be a PDF or DOCX file.',
-            'attachment.max'             => 'Attachment must not exceed 10MB.',
+            'project_id.required'        => 'Pilih proyek terlebih dahulu.',
+            'project_id.exists'          => 'Proyek yang dipilih tidak valid.',
+            'contract_id.required'       => 'Pilih Final Contract terlebih dahulu.',
+            'contract_id.exists'          => 'Kontrak yang dipilih tidak valid.',
+            'request_date.required'      => 'Tanggal permintaan wajib diisi.',
+            'mobilization_date.required' => 'Tanggal mobilisasi wajib diisi.',
+            'mobilization_date.after_or_equal' => 'Tanggal mobilisasi tidak boleh sebelum tanggal permintaan.',
+            'attachment.mimes'           => 'Lampiran harus berformat PDF / DOC / DOCX.',
+            'attachment.max'             => 'Lampiran tidak boleh lebih dari 10MB.',
         ];
     }
 }

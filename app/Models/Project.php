@@ -212,6 +212,11 @@ class Project extends Model
         return $this->hasMany(UnitRequest::class);
     }
 
+    public function unitReplacements()
+    {
+        return $this->hasMany(\App\Models\UnitReplacement::class);
+    }
+
     /**
      * Get the contracts for the project
      */
