@@ -124,7 +124,18 @@ class ProjectController extends Controller
                 },
                 'unitRequests' => function ($query) {
                     $query->where('status', \App\Enums\UnitRequestStatus::APPROVED_FROM_WORKSHOP)
-                          ->with(['items.replacedByItem.unitReplacement:id,uid,replacement_number', 'creator:id,name'])
+                          ->with([
+                              'sourceUnitTransfer.sourceProject:id,uid,project_number,project_name',
+                              'sourceUnitTransfer.sourceUnitRequest:id,uid,request_number',
+                              'items.replacedByItem.unitReplacement:id,uid,replacement_number',
+                              'items.returnItems.unitReturn:id,uid,ppu_number,return_date',
+                              'items.transferItems.unitTransfer.destinationProject:id,uid,project_number,project_name',
+                              'items.transferItems.unitTransfer:id,uid,transfer_number,transfer_date,destination_project_id,status',
+                              'items.sourceUnitTransferItem.unitTransfer.sourceProject:id,uid,project_number,project_name',
+                              'items.sourceUnitTransferItem.unitTransfer:id,uid,transfer_number,transfer_date,source_project_id,source_unit_request_id',
+                              'items.sourceUnitTransferItem.unitTransfer.sourceUnitRequest:id,uid,request_number',
+                              'creator:id,name',
+                          ])
                           ->latest();
                 },
                 'unitReplacements' => function ($query) {
@@ -133,6 +144,30 @@ class ProjectController extends Controller
                         'items',
                         'creator:id,name',
                     ])->latest();
+                },
+                'unitReturns' => function ($query) {
+                    $query->with([
+                        'unitRequest:id,uid,request_number',
+                        'items',
+                        'creator:id,name',
+                    ])->latest();
+                },
+                'unitTransfersOut' => function ($query) {
+                    $query->with([
+                        'destinationProject:id,uid,project_number,project_name',
+                        'sourceUnitRequest:id,uid,request_number',
+                        'items',
+                        'creator:id,name',
+                    ])->latest();
+                },
+                'unitTransfersIn' => function ($query) {
+                    $query->where('status', \App\Enums\UnitTransferStatus::COMPLETED)
+                          ->with([
+                              'sourceProject:id,uid,project_number,project_name',
+                              'sourceUnitRequest:id,uid,request_number',
+                              'items',
+                              'creator:id,name',
+                          ])->latest();
                 }
             ])
             ->where('uid', $id)

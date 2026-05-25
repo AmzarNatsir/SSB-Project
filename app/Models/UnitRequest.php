@@ -23,6 +23,8 @@ class UnitRequest extends Model
         'request_date',
         'mobilization_date',
         'status',
+        'origin',
+        'source_unit_transfer_id',
         'notes',
         'attachment_path',
         'created_by',
@@ -92,6 +94,16 @@ class UnitRequest extends Model
     public function approvals(): HasMany
     {
         return $this->hasMany(UnitRequestApproval::class)->orderBy('level', 'asc');
+    }
+
+    public function sourceUnitTransfer(): BelongsTo
+    {
+        return $this->belongsTo(UnitTransfer::class, 'source_unit_transfer_id');
+    }
+
+    public function isFromTransfer(): bool
+    {
+        return $this->origin === 'TRANSFER';
     }
 
     // Business Logic Helpers

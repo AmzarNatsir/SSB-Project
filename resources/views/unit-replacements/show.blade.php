@@ -157,10 +157,9 @@
                         @endif
 
                         @if($canForward)
-                        <form action="{{ route('unit-replacements.forward', $unitReplacement->uid) }}" method="POST"
-                            onsubmit="return confirm('Teruskan PTU ini ke Workshop?')">
+                        <form action="{{ route('unit-replacements.forward', $unitReplacement->uid) }}" method="POST" id="forwardForm">
                             @csrf
-                            <button type="submit" class="btn btn-warning w-100">
+                            <button type="button" class="btn btn-warning w-100" onclick="confirmForwardPtu()">
                                 <i class="ti ti-send me-1"></i> Teruskan ke Workshop
                             </button>
                         </form>
@@ -173,10 +172,9 @@
                         @endif
 
                         @if($unitReplacement->status->value === 'DRAFT' && auth()->id() === $unitReplacement->created_by)
-                        <form action="{{ route('unit-replacements.destroy', $unitReplacement->uid) }}" method="POST"
-                            onsubmit="return confirm('Hapus PTU ini? Tidak dapat dibatalkan.')">
+                        <form action="{{ route('unit-replacements.destroy', $unitReplacement->uid) }}" method="POST" id="deletePtuForm">
                             @csrf @method('DELETE')
-                            <button type="submit" class="btn btn-outline-danger w-100">
+                            <button type="button" class="btn btn-outline-danger w-100" onclick="confirmDeletePtu()">
                                 <i class="ti ti-trash me-1"></i> Hapus
                             </button>
                         </form>
@@ -413,5 +411,43 @@
     </div>
 </div>
 @endif
+
+@push('scripts')
+<script>
+function confirmForwardPtu() {
+    Swal.fire({
+        title: 'Teruskan ke Workshop?',
+        text: 'PTU ini akan diteruskan ke Workshop untuk eksekusi.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#f0a30a',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, teruskan',
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('forwardForm').submit();
+        }
+    });
+}
+
+function confirmDeletePtu() {
+    Swal.fire({
+        title: 'Hapus PTU ini?',
+        text: 'Tindakan ini tidak dapat dibatalkan.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Ya, hapus',
+        cancelButtonText: 'Batal',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('deletePtuForm').submit();
+        }
+    });
+}
+</script>
+@endpush
 
 @endsection

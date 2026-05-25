@@ -175,9 +175,9 @@
         }).join('');
 
         itemsBody.innerHTML = ur.items.map((it, idx) => `
-            <tr class="item-row" data-row="${idx}">
+            <tr class="item-row table-active" data-row="${idx}">
                 <td class="text-center align-middle">
-                    <input type="checkbox" class="form-check-input row-check" data-row="${idx}" checked>
+                    <input type="checkbox" class="form-check-input row-check" data-row="${idx}">
                 </td>
                 <td>
                     <div class="fw-medium">${it.unit_name}</div>
@@ -185,24 +185,28 @@
                     <input type="hidden" name="items[${idx}][original_unit_request_item_id]" value="${it.id}">
                 </td>
                 <td>
-                    <select name="items[${idx}][replacement_workshop_unit_id]" class="form-select form-select-sm replacement-select" data-row="${idx}">
+                    <select name="items[${idx}][replacement_workshop_unit_id]" class="form-select form-select-sm replacement-select" data-row="${idx}" disabled>
                         <option value="">-- Pilih unit pengganti --</option>
                         ${candOptions}
                     </select>
-                    <input type="hidden" name="items[${idx}][replacement_unit_name]" class="replacement-name" value="">
-                    <input type="hidden" name="items[${idx}][replacement_equipment_code]" class="replacement-code" value="">
+                    <input type="hidden" name="items[${idx}][replacement_unit_name]" class="replacement-name" value="" disabled>
+                    <input type="hidden" name="items[${idx}][replacement_equipment_code]" class="replacement-code" value="" disabled>
                 </td>
                 <td>
-                    <input type="number" step="0.01" min="0.01" name="items[${idx}][replacement_qty]" class="form-control form-control-sm" value="${it.qty}" required>
+                    <input type="number" step="0.01" min="0.01" name="items[${idx}][replacement_qty]" class="form-control form-control-sm" value="${it.qty}" required disabled>
                 </td>
                 <td>
-                    <input type="number" min="1" name="items[${idx}][replacement_duration_days]" class="form-control form-control-sm" value="${it.duration_days || ''}">
+                    <input type="number" min="1" name="items[${idx}][replacement_duration_days]" class="form-control form-control-sm" value="${it.duration_days || ''}" disabled>
                 </td>
                 <td>
-                    <input type="text" name="items[${idx}][reason]" class="form-control form-control-sm" placeholder="Alasan" required>
+                    <input type="text" name="items[${idx}][reason]" class="form-control form-control-sm" placeholder="Alasan" required disabled>
                 </td>
             </tr>
         `).join('');
+
+        const selectAll = document.getElementById('selectAllItems');
+        selectAll.checked = false;
+        selectAll.indeterminate = false;
     }
 
     function toggleRow(row, checked) {

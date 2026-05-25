@@ -42,6 +42,16 @@ class RepositoryServiceProvider extends ServiceProvider
         );
 
         $this->app->bind(
+            \App\Repositories\Interfaces\IUnitReturnRepository::class,
+            \App\Repositories\UnitReturnRepository::class
+        );
+
+        $this->app->bind(
+            \App\Repositories\Interfaces\IUnitTransferRepository::class,
+            \App\Repositories\UnitTransferRepository::class
+        );
+
+        $this->app->bind(
             \App\Repositories\ContractRepository::class,
             \App\Repositories\ContractRepository::class
         );

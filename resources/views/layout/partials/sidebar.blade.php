@@ -154,7 +154,7 @@
                         <li class="{{ Request::is('unit-returns*') ? 'active' : '' }}"><a
                                 href="{{ route('unit-returns.index') }}"><i class="ti ti-arrow-back"></i><span>Unit
                                     Return (PPU)</span></a></li>
-                        <li class="{{ Request::is('unit-transfer*') ? 'active' : '' }}"><a href="#"><i
+                        <li class="{{ Request::is('unit-transfers*') ? 'active' : '' }}"><a href="{{ route('unit-transfers.index') }}"><i
                                     class="ti ti-car"></i><span>Unit Transfer</span></a></li>
                     </ul>
                 </li>

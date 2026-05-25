@@ -217,6 +217,21 @@ class Project extends Model
         return $this->hasMany(\App\Models\UnitReplacement::class);
     }
 
+    public function unitReturns()
+    {
+        return $this->hasMany(\App\Models\ProjectUnitReturn::class);
+    }
+
+    public function unitTransfersOut()
+    {
+        return $this->hasMany(\App\Models\UnitTransfer::class, 'source_project_id');
+    }
+
+    public function unitTransfersIn()
+    {
+        return $this->hasMany(\App\Models\UnitTransfer::class, 'destination_project_id');
+    }
+
     /**
      * Get the contracts for the project
      */

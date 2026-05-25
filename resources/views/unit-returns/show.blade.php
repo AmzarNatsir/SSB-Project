@@ -77,12 +77,21 @@
                 </div>
 
                 <div class="card mb-4">
-                    <div class="card-header bg-light-200"><h6 class="mb-0">Project</h6></div>
+                    <div class="card-header bg-light-200"><h6 class="mb-0">Project & UR</h6></div>
                     <div class="card-body">
-                        <label class="text-muted d-block small mb-1">Project Name</label>
-                        <p class="fw-bold mb-2">{{ $unitReturn->project->project_name ?? '-' }}</p>
-                        <label class="text-muted d-block small mb-1">Project Number</label>
-                        <p class="fw-bold mb-0">{{ $unitReturn->project->project_number ?? '-' }}</p>
+                        <label class="text-muted d-block small mb-1">Project</label>
+                        <p class="fw-bold mb-2">{{ $unitReturn->project->project_name ?? '-' }} <span class="text-muted small">({{ $unitReturn->project->project_number ?? '-' }})</span></p>
+                        <label class="text-muted d-block small mb-1">Unit Request (UR)</label>
+                        <p class="fw-bold mb-2">{{ $unitReturn->unitRequest?->request_number ?? '-' }}</p>
+                        @if($unitReturn->contract)
+                        <label class="text-muted d-block small mb-1">Contract</label>
+                        <p class="fw-bold mb-0">{{ $unitReturn->contract->contract_number }}</p>
+                        @endif
+                        @if($unitReturn->notes)
+                        <hr>
+                        <label class="text-muted d-block small mb-1">Notes</label>
+                        <p class="mb-0 small">{{ $unitReturn->notes }}</p>
+                        @endif
                     </div>
                 </div>
 
@@ -94,22 +103,11 @@
                             <i class="ti ti-edit me-1"></i> Edit PPU
                         </a>
                         @endif
-                        @if($unitReturn->canSubmit())
-                        <form action="{{ route('unit-returns.submit', $unitReturn->uid) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="btn btn-info w-100"><i class="ti ti-send me-1"></i> Submit for Approval</button>
-                        </form>
-                        @endif
-                        @if($unitReturn->canApprove())
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveModal">
-                            <i class="ti ti-circle-check me-1"></i> Approve / Reject
-                        </button>
-                        @endif
                         @if($unitReturn->canComplete())
                         <form action="{{ route('unit-returns.complete', $unitReturn->uid) }}" method="POST"
-                            onsubmit="return confirm('Mark this PPU as completed?')">
+                            onsubmit="return confirm('Tandai PPU ini sebagai selesai? Unit akan ditandai sebagai dikembalikan.')">
                             @csrf
-                            <button type="submit" class="btn btn-primary w-100"><i class="ti ti-flag-check me-1"></i> Mark as Completed</button>
+                            <button type="submit" class="btn btn-primary w-100"><i class="ti ti-flag-check me-1"></i> Selesaikan Pengembalian</button>
                         </form>
                         @endif
                         @if($unitReturn->status->value === 'DRAFT')
@@ -125,16 +123,17 @@
 
             <!-- Items Table -->
             <div class="col-xl-8 col-lg-7">
-                <div class="card">
+                <div class="card mb-4">
                     <div class="card-header bg-light-200"><h5 class="mb-0">Return Items</h5></div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0">
+                            <table class="table table-hover mb-0 align-middle">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>#</th>
-                                        <th>Project Unit ID</th>
-                                        <th>Equipment ID</th>
+                                        <th style="width:40px">#</th>
+                                        <th>Unit</th>
+                                        <th style="width:120px">Qty</th>
+                                        <th>Operator</th>
                                         <th>Notes</th>
                                     </tr>
                                 </thead>
@@ -142,60 +141,63 @@
                                     @forelse($unitReturn->items as $i => $item)
                                     <tr>
                                         <td class="text-muted small">{{ $i + 1 }}</td>
-                                        <td><span class="fw-medium text-danger">{{ $item->project_unit_id }}</span></td>
-                                        <td><span class="fw-medium text-primary">{{ $item->equipment_id }}</span></td>
-                                        <td class="text-muted small">{{ $item->notes ?? '-' }}</td>
+                                        <td>
+                                            <div class="fw-medium">{{ $item->unit_name }}</div>
+                                            @if($item->equipment_code)
+                                                <small class="text-muted">{{ $item->equipment_code }}</small>
+                                            @endif
+                                        </td>
+                                        <td>{{ rtrim(rtrim(number_format($item->qty, 2, '.', ''), '0'), '.') }}</td>
+                                        <td>{{ $item->operator_name ?: '-' }}</td>
+                                        <td class="text-muted small">{{ $item->notes ?: '-' }}</td>
                                     </tr>
                                     @empty
-                                    <tr><td colspan="4" class="text-center py-4 text-muted">No items found.</td></tr>
+                                    <tr><td colspan="5" class="text-center py-4 text-muted">No items found.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
+
+                @if($unitReturn->approvals->isNotEmpty())
+                <div class="card">
+                    <div class="card-header bg-light-200"><h5 class="mb-0">Approval Timeline</h5></div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width:70px">Level</th>
+                                        <th>Approver</th>
+                                        <th style="width:140px">Status</th>
+                                        <th>Remarks</th>
+                                        <th style="width:160px">At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($unitReturn->approvals as $ap)
+                                    <tr>
+                                        <td>{{ $ap->level }}</td>
+                                        <td>{{ $ap->approver->name ?? '-' }}</td>
+                                        <td>
+                                            @php $s = strtolower($ap->status ?? ''); @endphp
+                                            <span class="badge bg-{{ $s === 'approved' ? 'success' : ($s === 'rejected' ? 'danger' : 'warning') }}">{{ ucfirst($s ?: 'pending') }}</span>
+                                        </td>
+                                        <td class="text-muted small">{{ $ap->remarks ?: '-' }}</td>
+                                        <td class="text-muted small">{{ $ap->approved_at ? $ap->approved_at->format('d M Y H:i') : '-' }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Approval -->
-@if($unitReturn->canApprove())
-<div class="modal fade" id="approveModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{{ route('unit-returns.approve', $unitReturn->uid) }}" method="POST">
-                @csrf
-                <div class="modal-header">
-                    <h5 class="modal-title">Approve / Reject PPU</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Decision <span class="text-danger">*</span></label>
-                        <div class="d-flex gap-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="decision" value="approve" required>
-                                <label class="form-check-label text-success fw-bold">Approve</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="decision" value="reject">
-                                <label class="form-check-label text-danger fw-bold">Reject</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label">Remarks</label>
-                        <textarea name="remarks" rows="3" class="form-control" placeholder="Optional remarks..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Confirm</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endif
+<!-- Modal Approval removed: PPU tidak melalui proses approval -->
 @endsection

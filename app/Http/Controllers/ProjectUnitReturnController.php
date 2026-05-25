@@ -3,23 +3,25 @@
 namespace App\Http\Controllers;
 
 use App\Enums\ProjectUnitReturnStatus;
-use App\Models\Project;
+use App\Http\Requests\UnitReturn\ApproveUnitReturnRequest;
+use App\Http\Requests\UnitReturn\StoreUnitReturnRequest;
+use App\Http\Requests\UnitReturn\UpdateUnitReturnRequest;
 use App\Models\ProjectUnitReturn;
-use App\Services\ApprovalFlowService;
+use App\Repositories\Interfaces\IUnitReturnRepository;
+use App\Services\UnitReturnService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class ProjectUnitReturnController extends Controller
 {
-    public function __construct(protected ApprovalFlowService $flowService) {}
+    public function __construct(
+        protected UnitReturnService $service,
+        protected IUnitReturnRepository $repo,
+    ) {}
 
-    /**
-     * Display a listing of all PPU records.
-     */
     public function index()
     {
-        $records = ProjectUnitReturn::with(['project', 'creator'])
+        $records = ProjectUnitReturn::with(['project', 'creator', 'unitRequest:id,request_number'])
             ->latest()
             ->paginate(15);
 
@@ -29,228 +31,165 @@ class ProjectUnitReturnController extends Controller
         $completedCount = ProjectUnitReturn::where('status', ProjectUnitReturnStatus::COMPLETED)->count();
 
         return view('unit-returns.index', compact(
-            'records',
-            'totalCount',
-            'submittedCount',
-            'approvedCount',
-            'completedCount'
+            'records', 'totalCount', 'submittedCount', 'approvedCount', 'completedCount'
         ));
     }
 
-    /**
-     * Show form to create a new PPU.
-     */
     public function create()
     {
-        $projects = Project::all();
-        return view('unit-returns.create', compact('projects'));
+        $eligibleProjects = $this->repo->getEligibleProjects();
+        return view('unit-returns.create', compact('eligibleProjects'));
     }
 
     /**
-     * Store a newly created PPU.
+     * AJAX: list UR APPROVED_FROM_WORKSHOP milik project, dengan items yang belum dikembalikan.
      */
-    public function store(Request $request)
+    public function eligibleUnitRequests(Request $request)
     {
-        $request->validate([
-            'project_id'          => 'required|exists:projects,id',
-            'return_date'         => 'required|date',
-            'demobilization_date' => 'nullable|date',
-            'attachment'          => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
-            'items'               => 'required|array|min:1',
-            'items.*.project_unit_id' => 'required|string',
-            'items.*.equipment_id'    => 'required|string',
-        ]);
-
-        $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('unit-returns', 'private');
+        $projectId = $request->integer('project_id');
+        if (! $projectId) {
+            return response()->json(['data' => []]);
         }
 
-        $ppu = ProjectUnitReturn::create([
-            'project_id'          => $request->project_id,
-            'return_date'         => $request->return_date,
-            'demobilization_date' => $request->demobilization_date,
-            'attachment_path'     => $attachmentPath,
-            'status'              => ProjectUnitReturnStatus::DRAFT,
-            'created_by'          => Auth::id(),
-        ]);
+        $unitRequests = $this->repo->getEligibleUnitRequests($projectId)
+            ->map(fn ($ur) => [
+                'id'              => $ur->id,
+                'request_number'  => $ur->request_number,
+                'contract_number' => $ur->contract?->contract_number,
+                'items' => $ur->items->map(fn ($it) => [
+                    'id'            => $it->id,
+                    'unit_name'     => $it->unit_name,
+                    'equipment_id'  => $it->equipment_id,
+                    'qty'           => (float) $it->qty,
+                    'returned_qty'  => (float) $it->returned_qty,
+                    'remaining_qty' => (float) $it->remainingQty(),
+                    'operator_name' => $it->operator_name,
+                ])->values(),
+            ])->values();
 
-        foreach ($request->items as $item) {
-            $ppu->items()->create([
-                'project_unit_id' => $item['project_unit_id'],
-                'equipment_id'    => $item['equipment_id'],
-                'notes'           => $item['notes'] ?? null,
-            ]);
-        }
-
-        return redirect()
-            ->route('unit-returns.show', $ppu->uid)
-            ->with('success', 'PPU ' . $ppu->ppu_number . ' created successfully.');
+        return response()->json(['data' => $unitRequests]);
     }
 
-    /**
-     * Display PPU detail.
-     */
+    public function store(StoreUnitReturnRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            if ($request->hasFile('attachment')) {
+                $data['attachment'] = $request->file('attachment');
+            }
+            $unitReturn = $this->service->create($data, auth()->id());
+
+            return redirect()
+                ->route('unit-returns.show', $unitReturn->uid)
+                ->with('success', 'PPU ' . $unitReturn->ppu_number . ' berhasil dibuat.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
+        }
+    }
+
     public function show(ProjectUnitReturn $unitReturn)
     {
-        $unitReturn->load(['project', 'items', 'creator', 'approver']);
+        $unitReturn->load([
+            'project', 'unitRequest', 'contract',
+            'items.originalUnitRequestItem',
+            'creator', 'approver', 'approvals.approver',
+        ]);
+
         return view('unit-returns.show', compact('unitReturn'));
     }
 
-    /**
-     * Show edit form.
-     */
     public function edit(ProjectUnitReturn $unitReturn)
     {
-        if (!$unitReturn->canEdit()) {
+        if (! $unitReturn->isEditable()) {
             return redirect()
                 ->route('unit-returns.show', $unitReturn->uid)
-                ->with('error', 'This PPU cannot be edited in ' . $unitReturn->status->label() . ' status.');
+                ->with('error', 'Tidak bisa edit di status ' . $unitReturn->status->label() . '.');
         }
 
-        $projects = Project::all();
-        return view('unit-returns.edit', compact('unitReturn', 'projects'));
+        $unitReturn->load(['project', 'unitRequest.items', 'items.originalUnitRequestItem']);
+
+        return view('unit-returns.edit', compact('unitReturn'));
     }
 
-    /**
-     * Update PPU.
-     */
-    public function update(Request $request, ProjectUnitReturn $unitReturn)
+    public function update(UpdateUnitReturnRequest $request, ProjectUnitReturn $unitReturn)
     {
-        if (!$unitReturn->canEdit()) {
-            return back()->with('error', 'Cannot update in current status.');
-        }
-
-        $request->validate([
-            'project_id'          => 'required|exists:projects,id',
-            'return_date'         => 'required|date',
-            'demobilization_date' => 'nullable|date',
-            'attachment'          => 'nullable|file|mimes:pdf,jpg,png,jpeg|max:5120',
-            'items'               => 'required|array|min:1',
-            'items.*.project_unit_id' => 'required|string',
-            'items.*.equipment_id'    => 'required|string',
-        ]);
-
-        $data = $request->only(['project_id', 'return_date', 'demobilization_date']);
-
-        if ($request->hasFile('attachment')) {
-            if ($unitReturn->attachment_path) {
-                Storage::disk('private')->delete($unitReturn->attachment_path);
+        try {
+            $data = $request->validated();
+            if ($request->hasFile('attachment')) {
+                $data['attachment'] = $request->file('attachment');
             }
-            $data['attachment_path'] = $request->file('attachment')->store('unit-returns', 'private');
+            $updated = $this->service->update($unitReturn->uid, $data, auth()->id());
+
+            return redirect()
+                ->route('unit-returns.show', $updated->uid)
+                ->with('success', 'PPU ' . $updated->ppu_number . ' berhasil diperbarui.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage())->withInput();
         }
-
-        $unitReturn->update($data);
-
-        // Sync items
-        $unitReturn->items()->delete();
-        foreach ($request->items as $item) {
-            $unitReturn->items()->create([
-                'project_unit_id' => $item['project_unit_id'],
-                'equipment_id'    => $item['equipment_id'],
-                'notes'           => $item['notes'] ?? null,
-            ]);
-        }
-
-        return redirect()
-            ->route('unit-returns.show', $unitReturn->uid)
-            ->with('success', 'PPU ' . $unitReturn->ppu_number . ' updated successfully.');
     }
 
-    /**
-     * Submit PPU for approval.
-     */
     public function submit(ProjectUnitReturn $unitReturn)
     {
-        if (!$unitReturn->canSubmit()) {
-            return back()->with('error', 'Cannot submit in current status.');
+        try {
+            $this->service->submit($unitReturn->uid, auth()->id());
+            return back()->with('success', 'PPU ' . $unitReturn->ppu_number . ' diajukan untuk approval.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $unitReturn->update(['status' => ProjectUnitReturnStatus::SUBMITTED]);
-
-        return back()->with('success', 'PPU ' . $unitReturn->ppu_number . ' submitted for approval.');
     }
 
-    /**
-     * Approve or reject PPU.
-     *
-     * Authorization: only users configured at level 1 of ApprovalFlow code 'UnitReturn'.
-     * Currently PPU pakai single-step approval — level 1 dianggap final.
-     */
-    public function approve(Request $request, ProjectUnitReturn $unitReturn)
+    public function approve(ApproveUnitReturnRequest $request, ProjectUnitReturn $unitReturn)
     {
-        $request->validate([
-            'decision' => 'required|in:approve,reject',
-            'remarks'  => 'nullable|string|max:500',
-        ]);
+        try {
+            $this->service->processApproval(
+                $unitReturn->uid,
+                auth()->id(),
+                $request->input('decision'),
+                $request->input('remarks')
+            );
 
-        if (!$unitReturn->canApprove()) {
-            return back()->with('error', 'Cannot approve/reject in current status.');
+            $decision = ucfirst($request->input('decision'));
+            return back()->with('success', "PPU {$decision}.");
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        // Backend guard: pastikan user adalah approver yang dikonfigurasi di matriks
-        $levels = $this->flowService->getLevels('UnitReturn');
-        if ($levels->isEmpty()) {
-            return back()->with('error', 'Matriks approval untuk PPU belum diatur. Hubungi admin untuk konfigurasi di menu Approval Matrix.');
-        }
-
-        $firstLevel = $levels->first();
-        if (! $this->flowService->isUserApprover(Auth::id(), $firstLevel)) {
-            return back()->with('error', 'Anda tidak memiliki kewenangan untuk approval PPU.');
-        }
-
-        $newStatus = $request->decision === 'approve'
-            ? ProjectUnitReturnStatus::APPROVED
-            : ProjectUnitReturnStatus::REJECTED;
-
-        $unitReturn->update([
-            'status'      => $newStatus,
-            'approved_by' => Auth::id(),
-            'approved_at' => now(),
-        ]);
-
-        return back()->with('success', 'PPU ' . $unitReturn->ppu_number . ' ' . strtolower($newStatus->label()) . ' successfully.');
     }
 
-    /**
-     * Mark PPU as completed.
-     */
     public function complete(ProjectUnitReturn $unitReturn)
     {
-        if (!$unitReturn->canComplete()) {
-            return back()->with('error', 'Can only complete an approved PPU.');
+        try {
+            $this->service->complete($unitReturn->uid, auth()->id());
+            return back()->with('success', 'PPU ' . $unitReturn->ppu_number . ' marked as completed.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->with('error', collect($e->errors())->flatten()->first());
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-
-        $unitReturn->update(['status' => ProjectUnitReturnStatus::COMPLETED]);
-
-        return back()->with('success', 'PPU ' . $unitReturn->ppu_number . ' marked as completed.');
     }
 
-    /**
-     * Download attachment.
-     */
     public function downloadAttachment(ProjectUnitReturn $unitReturn)
     {
-        if (!$unitReturn->attachment_path || !Storage::disk('private')->exists($unitReturn->attachment_path)) {
+        if (! $unitReturn->attachment_path || ! Storage::disk('private')->exists($unitReturn->attachment_path)) {
             abort(404, 'Attachment not found.');
         }
 
         return Storage::disk('private')->download($unitReturn->attachment_path);
     }
 
-    /**
-     * Soft-delete.
-     */
     public function destroy(ProjectUnitReturn $unitReturn)
     {
         if ($unitReturn->status !== ProjectUnitReturnStatus::DRAFT) {
-            return back()->with('error', 'Only DRAFT PPU records can be deleted.');
+            return back()->with('error', 'Hanya status DRAFT yang bisa dihapus.');
         }
 
         $unitReturn->delete();
 
         return redirect()
             ->route('unit-returns.index')
-            ->with('success', 'PPU deleted.');
+            ->with('success', 'PPU dihapus.');
     }
 }

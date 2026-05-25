@@ -219,11 +219,19 @@ Route::middleware(['auth'])->group(function () {
     Route::get('api/projects/{project}/active-contracts',             [\App\Http\Controllers\WorkforceFormationController::class, 'projectContracts'])->name('workforce-formations.project-contracts');
 
     // Unit Returns (PPU)
+    Route::get('api/unit-returns/eligible-unit-requests', [\App\Http\Controllers\ProjectUnitReturnController::class, 'eligibleUnitRequests'])->name('unit-returns.eligible-unit-requests');
     Route::resource('unit-returns', \App\Http\Controllers\ProjectUnitReturnController::class)->parameters(['unit-returns' => 'unitReturn']);
     Route::post('unit-returns/{unitReturn}/submit', [\App\Http\Controllers\ProjectUnitReturnController::class, 'submit'])->name('unit-returns.submit');
     Route::post('unit-returns/{unitReturn}/approve', [\App\Http\Controllers\ProjectUnitReturnController::class, 'approve'])->name('unit-returns.approve');
     Route::post('unit-returns/{unitReturn}/complete', [\App\Http\Controllers\ProjectUnitReturnController::class, 'complete'])->name('unit-returns.complete');
     Route::get('unit-returns/{unitReturn}/attachment', [\App\Http\Controllers\ProjectUnitReturnController::class, 'downloadAttachment'])->name('unit-returns.attachment');
+
+    // Unit Transfers (UT)
+    Route::get('api/unit-transfers/eligible-unit-requests', [\App\Http\Controllers\UnitTransferController::class, 'eligibleUnitRequests'])->name('unit-transfers.eligible-unit-requests');
+    Route::get('api/unit-transfers/destination-project', [\App\Http\Controllers\UnitTransferController::class, 'destinationProject'])->name('unit-transfers.destination-project');
+    Route::resource('unit-transfers', \App\Http\Controllers\UnitTransferController::class)->parameters(['unit-transfers' => 'unitTransfer']);
+    Route::post('unit-transfers/{unitTransfer}/complete', [\App\Http\Controllers\UnitTransferController::class, 'complete'])->name('unit-transfers.complete');
+    Route::get('unit-transfers/{unitTransfer}/attachment', [\App\Http\Controllers\UnitTransferController::class, 'downloadAttachment'])->name('unit-transfers.attachment');
 
     // ... other protected routes
 });

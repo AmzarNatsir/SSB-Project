@@ -14,15 +14,20 @@ return new class extends Migration
             $table->uuid('uid')->unique();
             $table->string('ppu_number')->unique();
             $table->foreignId('project_id')->constrained('projects')->cascadeOnDelete();
+            $table->foreignId('unit_request_id')->nullable()->constrained('unit_requests')->nullOnDelete();
+            $table->foreignId('contract_id')->nullable()->constrained('contracts')->nullOnDelete();
             $table->date('return_date');
             $table->date('demobilization_date')->nullable();
+            $table->text('notes')->nullable();
             $table->string('attachment_path')->nullable();
-            $table->string('status')->default('DRAFT');
+            $table->string('status')->default('DRAFT')->index();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('approved_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->index(['project_id', 'status']);
         });
     }
 
@@ -31,4 +36,3 @@ return new class extends Migration
         Schema::dropIfExists('project_unit_returns');
     }
 };
-

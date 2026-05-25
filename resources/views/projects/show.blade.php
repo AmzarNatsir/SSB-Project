@@ -125,6 +125,30 @@
                             </button>
                         </li>
                         @endif
+                        @if($project->unitReturns->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="unit-returns-tab" data-bs-toggle="tab" data-bs-target="#unit-returns" type="button" role="tab">
+                                <i class="ti ti-truck-return me-1"></i> Pengembalian Unit
+                                <span class="badge bg-warning-subtle text-warning ms-1">{{ $project->unitReturns->count() }}</span>
+                            </button>
+                        </li>
+                        @endif
+                        @if($project->unitTransfersOut->isNotEmpty() || $project->unitTransfersIn->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="unit-transfers-tab" data-bs-toggle="tab" data-bs-target="#unit-transfers" type="button" role="tab">
+                                <i class="ti ti-arrows-exchange me-1"></i> History Mutasi Unit
+                                <span class="badge bg-info-subtle text-info ms-1">{{ $project->unitTransfersOut->count() + $project->unitTransfersIn->count() }}</span>
+                            </button>
+                        </li>
+                        @endif
+                        @if($project->unitRequests->isNotEmpty())
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="unit-tracing-tab" data-bs-toggle="tab" data-bs-target="#unit-tracing" type="button" role="tab">
+                                <i class="ti ti-route me-1"></i> Tracing Unit
+                                <span class="badge bg-primary-subtle text-primary ms-1">{{ $project->unitRequests->flatMap->items->count() }}</span>
+                            </button>
+                        </li>
+                        @endif
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="manpower-tab" data-bs-toggle="tab" data-bs-target="#manpower" type="button" role="tab">
                                 <i class="ti ti-users me-1"></i> Work Force
@@ -1236,6 +1260,16 @@
                                                                     <i class="ti ti-file-invoice me-1"></i>{{ $unitRequest->request_number }}
                                                                 </h5>
                                                             </a>
+                                                            @if($unitRequest->isFromTransfer())
+                                                                <div class="mt-1">
+                                                                    <span class="badge bg-info-subtle text-info border border-info-subtle">
+                                                                        <i class="ti ti-arrows-exchange me-1"></i>via Mutasi
+                                                                        @if($unitRequest->sourceUnitTransfer)
+                                                                            <a href="{{ route('unit-transfers.show', $unitRequest->sourceUnitTransfer->uid) }}" class="text-info text-decoration-underline ms-1">{{ $unitRequest->sourceUnitTransfer->transfer_number }}</a>
+                                                                        @endif
+                                                                    </span>
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                         <div class="vr d-none d-md-block"></div>
                                                         <div class="small">
@@ -1455,6 +1489,433 @@
                             </div>
                         </div>
                         @endif
+
+                        <!-- Pengembalian Unit (PPU) Tab -->
+                        <div class="tab-pane fade" id="unit-returns" role="tabpanel">
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <h5 class="mb-0">
+                                        <i class="ti ti-truck-return me-1 text-warning"></i> Pengembalian Unit (PPU)
+                                        <span class="badge bg-warning-subtle text-warning ms-1">{{ $project->unitReturns->count() }}</span>
+                                    </h5>
+                                    <a href="{{ route('unit-returns.index') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="ti ti-external-link me-1"></i> Buka modul PPU
+                                    </a>
+                                </div>
+                                <div class="card-body p-0">
+                                    @if($project->unitReturns->isEmpty())
+                                        <div class="text-center text-muted py-5">
+                                            <i class="ti ti-inbox fs-1 d-block mb-2"></i>
+                                            Belum ada PPU untuk project ini.
+                                        </div>
+                                    @else
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>PPU Number</th>
+                                                    <th>UR Asal</th>
+                                                    <th>Tgl Pengembalian</th>
+                                                    <th>Tgl Demob</th>
+                                                    <th class="text-center">Items</th>
+                                                    <th>Status</th>
+                                                    <th>Dibuat</th>
+                                                    <th class="text-end">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($project->unitReturns as $ppu)
+                                                <tr>
+                                                    <td><span class="fw-medium">{{ $ppu->ppu_number }}</span></td>
+                                                    <td>{{ $ppu->unitRequest?->request_number ?? '-' }}</td>
+                                                    <td>{{ $ppu->return_date?->format('d M Y') ?? '-' }}</td>
+                                                    <td>{{ $ppu->demobilization_date?->format('d M Y') ?? '-' }}</td>
+                                                    <td class="text-center">{{ $ppu->items->count() }}</td>
+                                                    <td><span class="badge bg-{{ $ppu->status->color() }}">{{ $ppu->status->label() }}</span></td>
+                                                    <td>
+                                                        <div class="small">{{ $ppu->creator->name ?? '-' }}</div>
+                                                        <div class="text-muted small">{{ $ppu->created_at->format('d M Y H:i') }}</div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('unit-returns.show', $ppu->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="ti ti-eye me-1"></i> Detail
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- History Mutasi Unit Tab -->
+                        <div class="tab-pane fade" id="unit-transfers" role="tabpanel">
+                            {{-- Unit Masuk (Transferred In) — unit yang digunakan di project ini hasil transfer --}}
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <h5 class="mb-0">
+                                        <i class="ti ti-arrow-down-right me-1 text-success"></i> Unit Masuk (dari Project Lain)
+                                        <span class="badge bg-success-subtle text-success ms-1">{{ $project->unitTransfersIn->count() }}</span>
+                                    </h5>
+                                    <small class="text-muted">Unit yang digunakan di project ini hasil mutasi dari project lain</small>
+                                </div>
+                                <div class="card-body p-0">
+                                    @if($project->unitTransfersIn->isEmpty())
+                                        <div class="text-center text-muted py-4">
+                                            <i class="ti ti-inbox fs-1 d-block mb-2"></i>
+                                            Belum ada unit masuk dari project lain.
+                                        </div>
+                                    @else
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>UT Number</th>
+                                                    <th>Project Asal</th>
+                                                    <th>UR Asal</th>
+                                                    <th>Tgl Transfer</th>
+                                                    <th>Unit</th>
+                                                    <th class="text-center">Qty</th>
+                                                    <th>Driver/Operator</th>
+                                                    <th class="text-end">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($project->unitTransfersIn as $ut)
+                                                    @foreach($ut->items as $idx => $item)
+                                                    <tr>
+                                                        @if($idx === 0)
+                                                        <td rowspan="{{ $ut->items->count() }}">
+                                                            <a href="{{ route('unit-transfers.show', $ut->uid) }}" class="fw-medium link-primary">{{ $ut->transfer_number }}</a>
+                                                        </td>
+                                                        <td rowspan="{{ $ut->items->count() }}">
+                                                            <div class="fw-medium">{{ $ut->sourceProject->project_name ?? '-' }}</div>
+                                                            <small class="text-muted">{{ $ut->sourceProject->project_number ?? '' }}</small>
+                                                        </td>
+                                                        <td rowspan="{{ $ut->items->count() }}">{{ $ut->sourceUnitRequest?->request_number ?? '-' }}</td>
+                                                        <td rowspan="{{ $ut->items->count() }}">{{ $ut->transfer_date?->format('d M Y') ?? '-' }}</td>
+                                                        @endif
+                                                        <td>
+                                                            <div class="fw-medium">{{ $item->unit_name }}</div>
+                                                            @if($item->equipment_code)<small class="text-muted">{{ $item->equipment_code }}</small>@endif
+                                                        </td>
+                                                        <td class="text-center">{{ rtrim(rtrim(number_format($item->qty, 2, '.', ''), '0'), '.') }}</td>
+                                                        <td>{{ $item->operator_name ?: '-' }}</td>
+                                                        @if($idx === 0)
+                                                        <td rowspan="{{ $ut->items->count() }}" class="text-end">
+                                                            <a href="{{ route('unit-transfers.show', $ut->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="ti ti-eye me-1"></i> Detail
+                                                            </a>
+                                                        </td>
+                                                        @endif
+                                                    </tr>
+                                                    @endforeach
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Unit Keluar (Transferred Out) --}}
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <h5 class="mb-0">
+                                        <i class="ti ti-arrow-up-right me-1 text-warning"></i> Unit Keluar (ke Project Lain)
+                                        <span class="badge bg-warning-subtle text-warning ms-1">{{ $project->unitTransfersOut->count() }}</span>
+                                    </h5>
+                                    <a href="{{ route('unit-transfers.index') }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="ti ti-external-link me-1"></i> Buka modul UT
+                                    </a>
+                                </div>
+                                <div class="card-body p-0">
+                                    @if($project->unitTransfersOut->isEmpty())
+                                        <div class="text-center text-muted py-4">
+                                            <i class="ti ti-inbox fs-1 d-block mb-2"></i>
+                                            Belum ada unit yang ditransfer dari project ini.
+                                        </div>
+                                    @else
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>UT Number</th>
+                                                    <th>Project Tujuan</th>
+                                                    <th>UR Asal</th>
+                                                    <th>Tgl Transfer</th>
+                                                    <th class="text-center">Items</th>
+                                                    <th>Status</th>
+                                                    <th>Dibuat</th>
+                                                    <th class="text-end">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach($project->unitTransfersOut as $ut)
+                                                <tr>
+                                                    <td><span class="fw-medium">{{ $ut->transfer_number }}</span></td>
+                                                    <td>
+                                                        <div class="fw-medium">{{ $ut->destinationProject->project_name ?? '-' }}</div>
+                                                        <small class="text-muted">{{ $ut->destinationProject->project_number ?? '' }}</small>
+                                                    </td>
+                                                    <td>{{ $ut->sourceUnitRequest?->request_number ?? '-' }}</td>
+                                                    <td>{{ $ut->transfer_date?->format('d M Y') ?? '-' }}</td>
+                                                    <td class="text-center">{{ $ut->items->count() }}</td>
+                                                    <td><span class="badge bg-{{ $ut->status->color() }}-subtle text-{{ $ut->status->color() }}">{{ $ut->status->label() }}</span></td>
+                                                    <td>
+                                                        <div class="small">{{ $ut->creator->name ?? '-' }}</div>
+                                                        <div class="text-muted small">{{ $ut->created_at->format('d M Y H:i') }}</div>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a href="{{ route('unit-transfers.show', $ut->uid) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="ti ti-eye me-1"></i> Detail
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tracing Unit Tab -->
+                        <div class="tab-pane fade" id="unit-tracing" role="tabpanel">
+                            <div class="card shadow-sm border-0 mb-4">
+                                <div class="card-header bg-transparent border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                    <div>
+                                        <h5 class="mb-0">
+                                            <i class="ti ti-route me-1 text-primary"></i> Tracing Unit
+                                        </h5>
+                                        <small class="text-muted">Lifecycle setiap unit: Unit Request → PTU → PPU → UT</small>
+                                    </div>
+                                </div>
+                                <div class="card-body p-3 p-md-4">
+                                    @php
+                                        $tracedItems = $project->unitRequests->flatMap(function ($ur) {
+                                            return $ur->items->map(function ($it) use ($ur) {
+                                                return ['ur' => $ur, 'item' => $it];
+                                            });
+                                        });
+                                    @endphp
+
+                                    @if($tracedItems->isEmpty())
+                                        <div class="text-center text-muted py-5">
+                                            <i class="ti ti-inbox fs-1 d-block mb-2"></i>
+                                            Belum ada unit untuk ditrace.
+                                        </div>
+                                    @else
+                                    <div class="row g-3">
+                                        @foreach($tracedItems as $row)
+                                            @php
+                                                $ur = $row['ur'];
+                                                $item = $row['item'];
+                                                $qtyTotal = (float) $item->qty;
+                                                $qtyReturned = (float) $item->returned_qty;
+                                                $qtyTransferred = (float) $item->transferred_qty;
+                                                $qtyRemaining = max(0, $qtyTotal - $qtyReturned - $qtyTransferred);
+                                                $isReplaced = $item->replaced_at !== null;
+
+                                                if ($isReplaced) {
+                                                    $statusLabel = 'Diganti (PTU)'; $statusColor = 'warning';
+                                                } elseif ($qtyRemaining <= 0) {
+                                                    if ($qtyTransferred > 0 && $qtyReturned <= 0) {
+                                                        $statusLabel = 'Ditransfer'; $statusColor = 'info';
+                                                    } elseif ($qtyReturned > 0 && $qtyTransferred <= 0) {
+                                                        $statusLabel = 'Dikembalikan'; $statusColor = 'secondary';
+                                                    } else {
+                                                        $statusLabel = 'Selesai'; $statusColor = 'dark';
+                                                    }
+                                                } elseif ($qtyReturned > 0 || $qtyTransferred > 0) {
+                                                    $statusLabel = 'Sebagian Aktif'; $statusColor = 'warning';
+                                                } else {
+                                                    $statusLabel = 'Aktif'; $statusColor = 'success';
+                                                }
+                                            @endphp
+                                            <div class="col-12">
+                                                <div class="border rounded-3 overflow-hidden">
+                                                    {{-- Header --}}
+                                                    <div class="p-3 bg-light-subtle border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                                            <div>
+                                                                <div class="fw-bold fs-15">
+                                                                    <i class="ti ti-truck text-primary me-1"></i>{{ $item->unit_name }}
+                                                                </div>
+                                                                @if($item->equipment_code)
+                                                                    <small class="text-muted"><i class="ti ti-barcode me-1"></i>{{ $item->equipment_code }}</small>
+                                                                @endif
+                                                            </div>
+                                                            <div class="vr d-none d-md-block"></div>
+                                                            <div class="small">
+                                                                <div class="text-muted">Operator</div>
+                                                                <div class="fw-medium">{{ $item->operator_name ?: '—' }}</div>
+                                                            </div>
+                                                            <div class="vr d-none d-md-block"></div>
+                                                            <div class="small">
+                                                                <div class="text-muted">Qty Awal</div>
+                                                                <div class="fw-medium">{{ rtrim(rtrim(number_format($qtyTotal, 2, '.', ''), '0'), '.') }}</div>
+                                                            </div>
+                                                            <div class="small">
+                                                                <div class="text-muted">Sisa Aktif</div>
+                                                                <div class="fw-medium text-{{ $qtyRemaining > 0 ? 'success' : 'muted' }}">
+                                                                    {{ rtrim(rtrim(number_format($qtyRemaining, 2, '.', ''), '0'), '.') }}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <span class="badge bg-{{ $statusColor }}-subtle text-{{ $statusColor }} border border-{{ $statusColor }}-subtle px-3 py-2">
+                                                            {{ $statusLabel }}
+                                                        </span>
+                                                    </div>
+
+                                                    {{-- Timeline --}}
+                                                    <div class="p-3">
+                                                        <ul class="list-unstyled mb-0 position-relative ps-4" style="border-left:2px dashed #dee2e6;">
+                                                            {{-- 0. Asal Mutasi (jika UR sintetis dari transfer) --}}
+                                                            @if($item->sourceUnitTransferItem && $item->sourceUnitTransferItem->unitTransfer)
+                                                                @php $srcUt = $item->sourceUnitTransferItem->unitTransfer; @endphp
+                                                                <li class="mb-3 position-relative">
+                                                                    <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-info d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                        <i class="ti ti-arrows-exchange"></i>
+                                                                    </span>
+                                                                    <div class="ps-3">
+                                                                        <div class="fw-semibold">
+                                                                            Diterima via Mutasi (UT)
+                                                                            <a href="{{ route('unit-transfers.show', $srcUt->uid) }}" class="text-info text-decoration-none ms-1">{{ $srcUt->transfer_number }}</a>
+                                                                        </div>
+                                                                        <div class="small text-muted">
+                                                                            Tgl: {{ optional($srcUt->transfer_date)->format('d M Y') ?? '—' }}
+                                                                            @if($srcUt->sourceProject)
+                                                                                &middot; Asal: <a href="{{ route('projects.show', $srcUt->sourceProject->uid) }}" class="text-info text-decoration-none">{{ $srcUt->sourceProject->project_name }}</a>
+                                                                            @endif
+                                                                            @if($srcUt->sourceUnitRequest)
+                                                                                &middot; UR asal: <a href="{{ route('unit-requests.show', $srcUt->sourceUnitRequest->uid) }}" class="text-info text-decoration-none">{{ $srcUt->sourceUnitRequest->request_number }}</a>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            @endif
+
+                                                            {{-- 1. Unit Request --}}
+                                                            <li class="mb-3 position-relative">
+                                                                <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-primary d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                    <i class="ti ti-file-invoice"></i>
+                                                                </span>
+                                                                <div class="ps-3">
+                                                                    <div class="fw-semibold">
+                                                                        Unit Request
+                                                                        <a href="{{ route('unit-requests.show', $ur->uid) }}" class="text-primary text-decoration-none ms-1">{{ $ur->request_number }}</a>
+                                                                        @if($ur->isFromTransfer())
+                                                                            <span class="badge bg-info-subtle text-info ms-1">via Mutasi</span>
+                                                                        @endif
+                                                                    </div>
+                                                                    <div class="small text-muted">
+                                                                        Tgl: {{ optional($ur->request_date)->format('d M Y') ?? optional($ur->created_at)->format('d M Y') }}
+                                                                        &middot; Qty: {{ rtrim(rtrim(number_format($qtyTotal, 2, '.', ''), '0'), '.') }}
+                                                                        @if($ur->creator) &middot; oleh {{ $ur->creator->name }} @endif
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+
+                                                            {{-- 2. PTU (Penggantian) --}}
+                                                            @if($item->replacedByItem && $item->replacedByItem->unitReplacement)
+                                                                @php $ptu = $item->replacedByItem->unitReplacement; @endphp
+                                                                <li class="mb-3 position-relative">
+                                                                    <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-warning d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                        <i class="ti ti-replace"></i>
+                                                                    </span>
+                                                                    <div class="ps-3">
+                                                                        <div class="fw-semibold">
+                                                                            Penggantian Unit (PTU)
+                                                                            <a href="{{ route('unit-replacements.show', $ptu->uid) }}" class="text-warning text-decoration-none ms-1">{{ $ptu->replacement_number }}</a>
+                                                                        </div>
+                                                                        <div class="small text-muted">
+                                                                            Tgl: {{ $item->replaced_at->format('d M Y') }}
+                                                                            @if($item->replacedByItem->unit_name)
+                                                                                &middot; Diganti dengan: <span class="text-dark">{{ $item->replacedByItem->unit_name }}</span>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                            @endif
+
+                                                            {{-- 3. PPU (Pengembalian) --}}
+                                                            @foreach($item->returnItems as $ri)
+                                                                @php $ppu = $ri->unitReturn; @endphp
+                                                                @if($ppu)
+                                                                <li class="mb-3 position-relative">
+                                                                    <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                        <i class="ti ti-truck-return"></i>
+                                                                    </span>
+                                                                    <div class="ps-3">
+                                                                        <div class="fw-semibold">
+                                                                            Pengembalian Unit (PPU)
+                                                                            <a href="{{ route('unit-returns.show', $ppu->uid) }}" class="text-secondary text-decoration-none ms-1">{{ $ppu->ppu_number }}</a>
+                                                                        </div>
+                                                                        <div class="small text-muted">
+                                                                            Tgl: {{ optional($ppu->return_date)->format('d M Y') ?? '—' }}
+                                                                            &middot; Qty dikembalikan: <span class="text-dark fw-medium">{{ rtrim(rtrim(number_format($ri->qty, 2, '.', ''), '0'), '.') }}</span>
+                                                                            @if($ri->notes) &middot; {{ $ri->notes }} @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                                @endif
+                                                            @endforeach
+
+                                                            {{-- 4. UT (Pertukaran/Mutasi) --}}
+                                                            @foreach($item->transferItems as $ti)
+                                                                @php $ut = $ti->unitTransfer; @endphp
+                                                                @if($ut)
+                                                                <li class="mb-3 position-relative">
+                                                                    <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-info d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                        <i class="ti ti-arrows-exchange"></i>
+                                                                    </span>
+                                                                    <div class="ps-3">
+                                                                        <div class="fw-semibold">
+                                                                            Mutasi Unit (UT)
+                                                                            <a href="{{ route('unit-transfers.show', $ut->uid) }}" class="text-info text-decoration-none ms-1">{{ $ut->transfer_number }}</a>
+                                                                            <span class="badge bg-{{ $ut->status->color() }}-subtle text-{{ $ut->status->color() }} ms-1">{{ $ut->status->label() }}</span>
+                                                                        </div>
+                                                                        <div class="small text-muted">
+                                                                            Tgl: {{ optional($ut->transfer_date)->format('d M Y') ?? '—' }}
+                                                                            &middot; Qty ditransfer: <span class="text-dark fw-medium">{{ rtrim(rtrim(number_format($ti->qty, 2, '.', ''), '0'), '.') }}</span>
+                                                                            @if($ut->destinationProject)
+                                                                                &middot; Tujuan: <a href="{{ route('projects.show', $ut->destinationProject->uid) }}" class="text-info text-decoration-none">{{ $ut->destinationProject->project_name }}</a>
+                                                                            @endif
+                                                                        </div>
+                                                                    </div>
+                                                                </li>
+                                                                @endif
+                                                            @endforeach
+
+                                                            {{-- Active state --}}
+                                                            @if($qtyRemaining > 0 && !$isReplaced)
+                                                            <li class="position-relative">
+                                                                <span class="position-absolute top-0 start-0 translate-middle-x rounded-circle bg-success d-inline-flex align-items-center justify-content-center text-white" style="width:24px;height:24px;font-size:11px;">
+                                                                    <i class="ti ti-circle-check"></i>
+                                                                </span>
+                                                                <div class="ps-3">
+                                                                    <div class="fw-semibold text-success">Masih Aktif di Project</div>
+                                                                    <div class="small text-muted">
+                                                                        Sisa qty: {{ rtrim(rtrim(number_format($qtyRemaining, 2, '.', ''), '0'), '.') }}
+                                                                    </div>
+                                                                </div>
+                                                            </li>
+                                                            @endif
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Manpower Tab -->
                         <div class="tab-pane fade" id="manpower" role="tabpanel">

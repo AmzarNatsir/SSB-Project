@@ -18,8 +18,11 @@ class ProjectUnitReturn extends Model
         'uid',
         'ppu_number',
         'project_id',
+        'unit_request_id',
+        'contract_id',
         'return_date',
         'demobilization_date',
+        'notes',
         'attachment_path',
         'status',
         'created_by',
@@ -56,15 +59,29 @@ class ProjectUnitReturn extends Model
         return 'uid';
     }
 
-    // Relationships
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
+    public function unitRequest(): BelongsTo
+    {
+        return $this->belongsTo(UnitRequest::class);
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(ProjectUnitReturnItem::class, 'unit_return_id');
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(ProjectUnitReturnApproval::class, 'unit_return_id')->orderBy('level', 'asc');
     }
 
     public function creator(): BelongsTo
@@ -77,7 +94,6 @@ class ProjectUnitReturn extends Model
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    // Business logic
     public function canEdit(): bool
     {
         return in_array($this->status, [
@@ -98,6 +114,14 @@ class ProjectUnitReturn extends Model
 
     public function canComplete(): bool
     {
-        return $this->status === ProjectUnitReturnStatus::APPROVED;
+        return in_array($this->status, [
+            ProjectUnitReturnStatus::DRAFT,
+            ProjectUnitReturnStatus::APPROVED,
+        ]);
+    }
+
+    public function isEditable(): bool
+    {
+        return $this->canEdit();
     }
 }

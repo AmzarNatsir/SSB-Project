@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ProjectUnitReturnItem extends Model
+class UnitTransferItem extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'unit_return_id',
+        'unit_transfer_id',
         'original_unit_request_item_id',
         'unit_name',
         'equipment_code',
@@ -22,13 +22,12 @@ class ProjectUnitReturnItem extends Model
     ];
 
     protected $casts = [
-        'qty'         => 'decimal:2',
-        'operator_id' => 'integer',
+        'qty' => 'decimal:2',
     ];
 
-    public function unitReturn(): BelongsTo
+    public function unitTransfer(): BelongsTo
     {
-        return $this->belongsTo(ProjectUnitReturn::class, 'unit_return_id');
+        return $this->belongsTo(UnitTransfer::class, 'unit_transfer_id');
     }
 
     public function originalUnitRequestItem(): BelongsTo
