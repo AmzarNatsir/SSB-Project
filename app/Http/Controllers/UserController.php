@@ -32,17 +32,17 @@ class UserController extends Controller
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end p-3">
                             <li>
-                                <a href="javascript:void(0);" class="dropdown-item rounded-1 edit-user-btn" 
-                                    data-id="'.$row->id.'" 
-                                    data-name="'.$row->name.'" 
+                                <a href="javascript:void(0);" class="dropdown-item rounded-1 edit-user-btn"
+                                    data-id="'.$row->id.'"
+                                    data-name="'.$row->name.'"
                                     data-email="'.$row->email.'"
-                                    data-roles="'.$row->roles->pluck('id')->implode(',').'"
+                                    data-roles="'.$row->roles->pluck('name')->implode(',').'"
                                     data-bs-toggle="offcanvas" data-bs-target="#edit_user_offcanvas">
                                     <i class="ti ti-edit me-2"></i>Edit
                                 </a>
                             </li>
                             <li>
-                                <a href="javascript:void(0);" class="dropdown-item rounded-1 text-danger delete-user-btn" 
+                                <a href="javascript:void(0);" class="dropdown-item rounded-1 text-danger delete-user-btn"
                                     data-id="'.$row->id.'">
                                     <i class="ti ti-trash me-2"></i>Delete
                                 </a>
@@ -120,7 +120,7 @@ class UserController extends Controller
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
-        
+
         if ($user->id === auth()->id()) {
             return redirect()->route('manage-users.index')
                 ->with('error', 'You cannot delete yourself.');

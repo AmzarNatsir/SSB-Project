@@ -77,91 +77,11 @@
             @endif
 
             <!-- pages -->
-            <div class="header-item d-none d-sm-flex">
-                <div class="dropdown me-2">
-                    <a href="javascript:void(0);" class="btn topbar-link topbar-teal-link" data-bs-toggle="dropdown">
-                        <i class="ti ti-layout-grid-add"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-md p-2">
-
-                        <!-- Item-->
-                        <a href="{{url('contacts')}}" class="dropdown-item">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="d-flex mb-1 fw-semibold text-dark">Contacts</span>
-                                    <span class="fs-13">View All the Contacts</span>
-                                </div>
-                                <i class="ti ti-chevron-right-pipe text-dark"></i>
-                            </div>
-                        </a>
-
-                        <!-- Item-->
-                        <a href="{{url('pipeline')}}" class="dropdown-item">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="d-flex mb-1 fw-semibold text-dark">Pipeline</span>
-                                    <span class="fs-13">View All the Pipeline</span>
-                                </div>
-                                <i class="ti ti-chevron-right-pipe text-dark"></i>
-                            </div>
-                        </a>
-
-                        <!-- Item-->
-                        <a href="{{url('activities')}}" class="dropdown-item">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="d-flex mb-1 fw-semibold text-dark">Activities</span>
-                                    <span class="fs-13">Activities</span>
-                                </div>
-                                <i class="ti ti-chevron-right-pipe text-dark"></i>
-                            </div>
-                        </a>
-
-                        <!-- Item-->
-                        <a href="{{url('analytics')}}" class="dropdown-item">
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div>
-                                    <span class="d-flex mb-1 fw-semibold text-dark">Analytics</span>
-                                    <span class="fs-13">Analytics</span>
-                                </div>
-                                <i class="ti ti-chevron-right-pipe text-dark"></i>
-                            </div>
-                        </a>
-
-                    </div>
-                </div>
-            </div>
-
-            <!-- faq -->
-            <div class="header-item d-none d-sm-flex">
-                <div class="dropdown me-2">
-                    <a href="{{url('faq')}}" class="btn topbar-link topbar-indigo-link"><i
-                            class="ti ti-help-hexagon"></i></a>
-                </div>
-            </div>
-
-            <!-- report -->
-            <div class="header-item d-none d-sm-flex">
-                <div class="dropdown me-2">
-                    <a href="{{url('lead-reports')}}" class="btn topbar-link topbar-warning-link"><i
-                            class="ti ti-chart-pie"></i></a>
-                </div>
-            </div>
 
             <div class="header-line"></div>
 
-            <!-- message -->
-            <div class="header-item">
-                <div class="dropdown me-2">
-                    <a href="{{url('chat')}}" class="btn topbar-link">
-                        <i class="ti ti-message-circle-exclamation"></i>
-                        <span class="badge rounded-pill">14</span>
-                    </a>
-                </div>
-            </div>
-
             <!-- Notification Dropdown -->
-            <div class="header-item">
+            {{-- <div class="header-item">
                 <div class="dropdown me-2">
 
                     <button class="topbar-link btn topbar-link dropdown-toggle drop-arrow-none"
@@ -318,7 +238,7 @@
 
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
             <!-- User Dropdown -->
             <div class="dropdown profile-dropdown d-flex align-items-center justify-content-center">
@@ -336,12 +256,12 @@
                             height="42" alt="">
                         <div class="ms-2">
                             <p class="fw-medium text-dark mb-0">{{ auth()->user()->name }}</p>
-                            <span class="d-block fs-13">{{ auth()->user()->roles->first()->name }}</span>
+                            <span class="d-block fs-13">{{ auth()->user()->roles->first()->name ?? '-' }}</span>
                         </div>
                     </div>
 
                     <!-- Item-->
-                    <a href="{{url('profile-settings')}}" class="dropdown-item">
+                    {{-- <a href="{{url('profile-settings')}}" class="dropdown-item">
                         <i class="ti ti-user-circle me-1 align-middle"></i>
                         <span class="align-middle">Profile Settings</span>
                     </a>
@@ -363,7 +283,7 @@
                     <a href="{{url('profile-settings')}}" class="dropdown-item">
                         <i class="ti ti-settings me-1 align-middle"></i>
                         <span class="align-middle">Settings</span>
-                    </a>
+                    </a> --}}
 
                     <!-- Item-->
                     <div class="pt-2 mt-2 border-top">

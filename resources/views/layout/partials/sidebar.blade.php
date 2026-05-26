@@ -22,7 +22,7 @@
         <div>
             <!-- Logo Normal -->
             <a href="{{url('index')}}" class="logo logo-normal">
-                <img src="{{URL::asset('build/img/logo.svg')}}" alt="Logo">
+                <img src="{{URL::asset('assets/logo_perusahaan/logo_ssb.png')}}" alt="Logo">
             </a>
 
             <!-- Logo Small -->
@@ -32,7 +32,7 @@
 
             <!-- Logo Dark -->
             <a href="{{url('index')}}" class="dark-logo">
-                <img src="{{URL::asset('build/img/logo-white.svg')}}" alt="Logo">
+                <img src="{{URL::asset('assets/logo_perusahaan/logo_ssb.png')}}" alt="Logo">
             </a>
         </div>
         <button class="sidenav-toggle-btn btn border-0 p-0 active" id="toggle_btn">
