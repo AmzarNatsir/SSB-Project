@@ -16,6 +16,94 @@ use Yajra\DataTables\Facades\DataTables;
 class ProjectController extends Controller
 {
     /**
+     * Print PDF summary for a project (cover + survey + tabs content).
+     */
+    public function printSummary(string $id)
+    {
+        $project = Project::with([
+                'category', 'subCategory', 'pic', 'equipmentRentalRate', 'images',
+                'surveys' => function ($q) {
+                    $q->with(['scores.criteria', 'scores.submitter', 'teams.user', 'documents.uploader'])->latest();
+                },
+                'latest_budget.items',
+                'latest_quotation.items',
+                'latest_negotiation.rounds',
+                'contracts' => function ($query) {
+                    $query->where('status', \App\Enums\ContractStatus::ACTIVE)->with('items');
+                },
+                'unitRequests' => function ($query) {
+                    $query->where('status', \App\Enums\UnitRequestStatus::APPROVED_FROM_WORKSHOP)
+                          ->with([
+                              'sourceUnitTransfer.sourceProject:id,uid,project_number,project_name',
+                              'sourceUnitTransfer.sourceUnitRequest:id,uid,request_number',
+                              'items.replacedByItem.unitReplacement:id,uid,replacement_number',
+                              'items.returnItems.unitReturn:id,uid,ppu_number,return_date',
+                              'items.transferItems.unitTransfer.destinationProject:id,uid,project_number,project_name',
+                              'items.transferItems.unitTransfer:id,uid,transfer_number,transfer_date,destination_project_id,status',
+                              'items.sourceUnitTransferItem.unitTransfer.sourceProject:id,uid,project_number,project_name',
+                              'items.sourceUnitTransferItem.unitTransfer:id,uid,transfer_number,transfer_date,source_project_id,source_unit_request_id',
+                              'items.sourceUnitTransferItem.unitTransfer.sourceUnitRequest:id,uid,request_number',
+                              'creator:id,name',
+                          ])
+                          ->latest();
+                },
+                'unitReplacements' => function ($query) {
+                    $query->with(['unitRequest:id,uid,request_number', 'items', 'creator:id,name'])->latest();
+                },
+                'unitReturns' => function ($query) {
+                    $query->with(['unitRequest:id,uid,request_number', 'items', 'creator:id,name'])->latest();
+                },
+                'unitTransfersOut' => function ($query) {
+                    $query->with([
+                        'destinationProject:id,uid,project_number,project_name',
+                        'sourceUnitRequest:id,uid,request_number',
+                        'items', 'creator:id,name',
+                    ])->latest();
+                },
+                'unitTransfersIn' => function ($query) {
+                    $query->where('status', \App\Enums\UnitTransferStatus::COMPLETED)
+                          ->with([
+                              'sourceProject:id,uid,project_number,project_name',
+                              'sourceUnitRequest:id,uid,request_number',
+                              'items', 'creator:id,name',
+                          ])->latest();
+                },
+            ])
+            ->where('uid', $id)
+            ->firstOrFail();
+
+        $workforceFormations = \App\Models\WorkforceFormation::with([
+                'contract:id,contract_number,start_date,end_date',
+                'creator:id,name',
+                'members' => fn ($q) => $q->where('is_active', true)
+                                           ->orderBy('position_name')
+                                           ->orderBy('employee_name'),
+            ])
+            ->where('project_id', $project->id)
+            ->where('status', \App\Enums\WorkforceFormationStatus::ACTIVE)
+            ->latest('effective_date')
+            ->get();
+
+        $unitFormations = \App\Models\UnitFormation::with([
+                'contract:id,contract_number,start_date,end_date',
+                'creator:id,name',
+                'items' => fn ($q) => $q->whereIn('status', ['READY', 'ACTIVE'])->orderBy('unit_name'),
+            ])
+            ->where('project_id', $project->id)
+            ->where('status', \App\Enums\UnitFormationStatus::ACTIVE)
+            ->latest('effective_date')
+            ->get();
+
+        $pdf = \PDF::loadView('projects.print.summary', compact(
+                'project', 'workforceFormations', 'unitFormations'
+            ))
+            ->setPaper('a4', 'portrait');
+
+        $filename = 'Project_Summary_' . ($project->project_number ?? $project->uid) . '.pdf';
+        return $pdf->stream($filename);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
@@ -51,6 +139,10 @@ class ProjectController extends Controller
                         <i class="ti ti-eye"></i>
                     </a>';
 
+                    $printBtn = '<a href="'.route('projects.summary-pdf', $row->uid).'" target="_blank" class="btn btn-sm btn-primary me-1" title="Print PDF Summary">
+                        <i class="ti ti-printer"></i>
+                    </a>';
+
                     $editBtn = '';
                     $deleteBtn = '';
 
@@ -68,7 +160,7 @@ class ProjectController extends Controller
                         </a>';
                     }
 
-                    return $detailBtn . $editBtn . $deleteBtn;
+                    return $detailBtn . $printBtn . $editBtn . $deleteBtn;
                 })
                 ->rawColumns(['action', 'project_status'])
                 ->make(true);

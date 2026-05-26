@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectCategoryController;
 use App\Http\Controllers\ProjectSubCategoryController;
 use App\Http\Controllers\ScoringController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -48,6 +49,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('projects/{id}/upload-image', [\App\Http\Controllers\ProjectController::class, 'uploadImage'])->name('projects.upload-image');
     Route::delete('project-images/{id}', [\App\Http\Controllers\ProjectController::class, 'deleteImage'])->name('project-images.delete');
     Route::get('storage/projects/{project_id}/{filename}', [\App\Http\Controllers\ProjectController::class, 'serveImage'])->name('projects.serve-image');
+    Route::get('projects/{id}/summary-pdf', [\App\Http\Controllers\ProjectController::class, 'printSummary'])->name('projects.summary-pdf');
 
     // Project Amendments
     Route::post('project-amendments', [\App\Http\Controllers\ProjectAmendmentController::class, 'store'])->name('project-amendments.store');
