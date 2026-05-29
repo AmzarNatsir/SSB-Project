@@ -66,25 +66,40 @@
             </button>
         </div>
         <div class="offcanvas-body">
-            <form action="{{ route('manage-users.store') }}" method="POST">
+            <form action="{{ route('manage-users.store') }}" method="POST" id="add_user_form">
                 @csrf
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" placeholder="Enter Full Name" required>
+                            <label class="form-label">Pilih Karyawan <span class="text-danger">*</span></label>
+                            <select name="employee_id" id="add_employee_id" class="form-control employee-select" required data-placeholder="Cari karyawan dari HRD..."></select>
+                            <small class="text-muted">Sumber data: master karyawan HRD</small>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+
+                        <div class="card border bg-light mb-3 d-none" id="add_employee_preview">
+                            <div class="card-body p-3">
+                                <h6 class="mb-2 text-primary"><i class="ti ti-user-check me-1"></i>Informasi Karyawan</h6>
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr><td width="30%"><strong>NIK</strong></td><td>: <span class="emp-nik">-</span></td></tr>
+                                    <tr><td><strong>Nama</strong></td><td>: <span class="emp-name">-</span></td></tr>
+                                    <tr><td><strong>Email</strong></td><td>: <span class="emp-email">-</span></td></tr>
+                                </table>
+                            </div>
                         </div>
+
+                        <div class="mb-3 d-none" id="add_email_manual_wrap">
+                            <label class="form-label">Email Manual <span class="text-danger">*</span></label>
+                            <input type="email" name="email_manual" class="form-control" placeholder="email@example.com">
+                            <small class="text-danger">Karyawan ini tidak memiliki email di HRD, isi manual.</small>
+                        </div>
+
                         <div class="mb-3">
                             <label class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" name="password" class="form-control" placeholder="Min 8 characters" required>
+                            <input type="password" name="password" class="form-control" placeholder="Min 8 karakter" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Assign Roles</label>
-                            <select name="roles[]" class="form-control select2" multiple data-placeholder="Choose Roles">
+                            <select name="roles[]" class="form-control select2-roles" multiple data-placeholder="Choose Roles">
                                 @foreach($roles as $role)
                                     <option value="{{ $role->name }}">{{ $role->name }}</option>
                                 @endforeach
@@ -116,20 +131,35 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="mb-3">
-                            <label class="form-label">Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" id="edit_name" class="form-control" required>
+                            <label class="form-label">Pilih Karyawan <span class="text-danger">*</span></label>
+                            <select name="employee_id" id="edit_employee_id" class="form-control employee-select" required data-placeholder="Cari karyawan dari HRD..."></select>
+                            <small class="text-muted">Sumber data: master karyawan HRD</small>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email Address <span class="text-danger">*</span></label>
-                            <input type="email" name="email" id="edit_email" class="form-control" required>
+
+                        <div class="card border bg-light mb-3 d-none" id="edit_employee_preview">
+                            <div class="card-body p-3">
+                                <h6 class="mb-2 text-primary"><i class="ti ti-user-check me-1"></i>Informasi Karyawan</h6>
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr><td width="30%"><strong>NIK</strong></td><td>: <span class="emp-nik">-</span></td></tr>
+                                    <tr><td><strong>Nama</strong></td><td>: <span class="emp-name">-</span></td></tr>
+                                    <tr><td><strong>Email</strong></td><td>: <span class="emp-email">-</span></td></tr>
+                                </table>
+                            </div>
                         </div>
+
+                        <div class="mb-3 d-none" id="edit_email_manual_wrap">
+                            <label class="form-label">Email Manual <span class="text-danger">*</span></label>
+                            <input type="email" name="email_manual" class="form-control" placeholder="email@example.com">
+                            <small class="text-danger">Karyawan ini tidak memiliki email di HRD, isi manual.</small>
+                        </div>
+
                         <div class="mb-3">
-                            <label class="form-label">Password <small class="text-muted">(Leave blank to keep current)</small></label>
-                            <input type="password" name="password" class="form-control" placeholder="New password">
+                            <label class="form-label">Password <small class="text-muted">(Kosongkan untuk tidak ganti)</small></label>
+                            <input type="password" name="password" class="form-control" placeholder="Password baru">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Assign Roles</label>
-                            <select name="roles[]" id="edit_roles" class="form-control select2" multiple data-placeholder="Choose Roles">
+                            <select name="roles[]" id="edit_roles" class="form-control select2-roles" multiple data-placeholder="Choose Roles">
                                 @foreach($roles as $role)
                                     <option value="{{ $role->name }}">{{ $role->name }}</option>
                                 @endforeach
@@ -152,41 +182,138 @@
     </form>
 
     <style>
-        /* Select2 Dropdown Styling Fix */
         .select2-container--default .select2-results > .select2-results__options {
             background-color: #ffffff !important;
             color: #333333 !important;
         }
         .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background-color: #3b71ca !important; /* Modern Blue */
+            background-color: #3b71ca !important;
             color: #ffffff !important;
         }
-        .select2-container--default .select2-selection--multiple {
+        .select2-container--default .select2-selection--multiple,
+        .select2-container--default .select2-selection--single {
             border: 1px solid #dcdcdc !important;
             min-height: 40px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
         }
         .select2-dropdown {
             border: 1px solid #dcdcdc !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            z-index: 1100;
         }
     </style>
 
     @push('scripts')
     <script>
         $(document).ready(function() {
-            // Initialize Select2 with proper parent for offcanvas
-            if ($.fn.select2) {
-                $('.select2').each(function() {
-                    var $this = $(this);
-                    $this.select2({
-                        width: '100%',
-                        placeholder: $this.data('placeholder'),
-                        dropdownParent: $this.closest('.offcanvas')
-                    });
+            const employeeSearchUrl = "{{ route('employees.search') }}";
+            const employeeShowUrlTpl = "{{ url('api/v1/employees') }}/__ID__";
+
+            function initEmployeeSelect($select, $offcanvas) {
+                $select.select2({
+                    placeholder: $select.data('placeholder'),
+                    allowClear: false,
+                    width: '100%',
+                    dropdownParent: $offcanvas,
+                    ajax: {
+                        url: employeeSearchUrl,
+                        dataType: 'json',
+                        delay: 250,
+                        data: params => ({ q: params.term || '', limit: 50 }),
+                        processResults: function(data) {
+                            return {
+                                results: (data.data || []).map(e => ({
+                                    id: e.id,
+                                    text: e.text,
+                                    name: e.name,
+                                    nik: e.employee_number,
+                                    email: e.email,
+                                }))
+                            };
+                        }
+                    }
                 });
             }
 
-            // Initialize DataTable
+            function applyPreview(scope, data) {
+                const $preview = $(scope).find('[id$="_employee_preview"]');
+                const $manualWrap = $(scope).find('[id$="_email_manual_wrap"]');
+                $preview.removeClass('d-none');
+                $preview.find('.emp-nik').text(data.nik || '-');
+                $preview.find('.emp-name').text(data.name || '-');
+                $preview.find('.emp-email').text(data.email || '(tidak ada)');
+
+                if (!data.email) {
+                    $manualWrap.removeClass('d-none').find('input').attr('required', true);
+                } else {
+                    $manualWrap.addClass('d-none').find('input').removeAttr('required').val('');
+                }
+            }
+
+            function resetPreview(scope) {
+                $(scope).find('[id$="_employee_preview"]').addClass('d-none');
+                $(scope).find('[id$="_email_manual_wrap"]').addClass('d-none')
+                    .find('input').removeAttr('required').val('');
+            }
+
+            // Fetch full profile (incl. nmemail) after picking employee.
+            // The search endpoint returns minimal fields; email only available via /api/v1/employees/{id}.
+            function enrichFromProfile(scope, employeeId) {
+                if (!employeeId) return;
+                const $preview = $(scope).find('[id$="_employee_preview"]');
+                $preview.find('.emp-email').text('memuat...');
+                $.get(employeeShowUrlTpl.replace('__ID__', employeeId))
+                    .done(function(resp) {
+                        const data = resp.data || {};
+                        applyPreview(scope, {
+                            nik: data.employee_number,
+                            name: data.name,
+                            email: data.email,
+                        });
+                    })
+                    .fail(function() {
+                        $preview.find('.emp-email').text('(gagal memuat)');
+                    });
+            }
+
+            // Init Add form
+            initEmployeeSelect($('#add_employee_id'), $('#add_user_offcanvas'));
+            $('#add_employee_id').on('select2:select', function(e) {
+                applyPreview('#add_user_offcanvas', e.params.data);
+                enrichFromProfile('#add_user_offcanvas', e.params.data.id);
+            });
+
+            // Init Edit form
+            initEmployeeSelect($('#edit_employee_id'), $('#edit_user_offcanvas'));
+            $('#edit_employee_id').on('select2:select', function(e) {
+                applyPreview('#edit_user_offcanvas', e.params.data);
+                enrichFromProfile('#edit_user_offcanvas', e.params.data.id);
+            });
+
+            // Roles select2
+            $('.select2-roles').each(function() {
+                const $this = $(this);
+                $this.select2({
+                    width: '100%',
+                    placeholder: $this.data('placeholder'),
+                    dropdownParent: $this.closest('.offcanvas')
+                });
+            });
+
+            // Reset Add form on close
+            $('#add_user_offcanvas').on('hidden.bs.offcanvas', function() {
+                $('#add_user_form')[0].reset();
+                $('#add_employee_id').val(null).trigger('change');
+                $('#add_user_form .select2-roles').val(null).trigger('change');
+                resetPreview('#add_user_offcanvas');
+            });
+
+            // DataTable
             var table = $('.ajax-datatable').DataTable({
                 processing: true,
                 serverSide: true,
@@ -200,28 +327,36 @@
                 ]
             });
 
-            // Edit User
+            // Edit User — preload employee from existing record
             $('body').on('click', '.edit-user-btn', function() {
                 var id = $(this).data('id');
+                var employeeId = $(this).data('employee-id');
+                var nik = $(this).data('nik');
                 var name = $(this).data('name');
                 var email = $(this).data('email');
                 var roles = $(this).data('roles').toString().split(',').filter(Boolean);
-                
-                $('#edit_name').val(name);
-                $('#edit_email').val(email);
+
                 $('#edit_user_form').attr('action', '/manage-users/' + id);
-                
-                // Set roles in select2
-                if ($.fn.select2) {
-                    $('#edit_roles').val(roles).trigger('change');
+
+                // Reset preview/manual
+                resetPreview('#edit_user_offcanvas');
+                $('#edit_employee_id').empty().trigger('change');
+
+                if (employeeId) {
+                    // Pre-fill select2 with existing employee snapshot
+                    const opt = new Option(`${name} (NIK: ${nik || '-'})`, employeeId, true, true);
+                    $('#edit_employee_id').append(opt).trigger('change');
+                    applyPreview('#edit_user_offcanvas', { nik: nik, name: name, email: email });
                 }
+
+                $('#edit_roles').val(roles).trigger('change');
             });
 
             // Delete User
             $('body').on('click', '.delete-user-btn', function() {
                 var id = $(this).data('id');
                 var deleteForm = $('#delete_user_form');
-                
+
                 deleteForm.attr('action', '/manage-users/' + id);
 
                 Swal.fire({
@@ -241,21 +376,11 @@
 
             // Notifications
             @if(session('success'))
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: '{{ session('success') }}',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
+                Swal.fire({ icon: 'success', title: 'Success!', text: '{{ session('success') }}', timer: 3000, showConfirmButton: false });
             @endif
 
             @if(session('error'))
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error!',
-                    text: '{{ session('error') }}'
-                });
+                Swal.fire({ icon: 'error', title: 'Error!', text: '{{ session('error') }}' });
             @endif
         });
     </script>

@@ -242,7 +242,7 @@ class EmployeeApiService
             'department' => $department,
             'department_id' => $emp['department_id'] ?? null,
             'status_karyawan' => $status,
-            'email' => $emp['email'] ?? null,
+            'email' => $emp['nmemail'] ?? $emp['email'] ?? null,
             'phone' => $emp['phone'] ?? $emp['phone_number'] ?? null,
             // Display di dropdown: "Nama — Jabatan (Kontrak/Harian)"
             'text' => trim(

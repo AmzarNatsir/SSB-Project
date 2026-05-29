@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\EmployeeApiService;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Yajra\DataTables\Facades\DataTables;
@@ -11,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct(protected EmployeeApiService $employees) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -34,8 +37,10 @@ class UserController extends Controller
                             <li>
                                 <a href="javascript:void(0);" class="dropdown-item rounded-1 edit-user-btn"
                                     data-id="'.$row->id.'"
-                                    data-name="'.$row->name.'"
-                                    data-email="'.$row->email.'"
+                                    data-employee-id="'.($row->employee_id ?? '').'"
+                                    data-nik="'.e($row->nik ?? '').'"
+                                    data-name="'.e($row->name).'"
+                                    data-email="'.e($row->email).'"
                                     data-roles="'.$row->roles->pluck('name')->implode(',').'"
                                     data-bs-toggle="offcanvas" data-bs-target="#edit_user_offcanvas">
                                     <i class="ti ti-edit me-2"></i>Edit
@@ -65,15 +70,31 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'employee_id' => 'required|integer|min:1|unique:users,employee_id',
+            'email_manual' => 'nullable|email|max:255',
             'password' => 'required|string|min:8',
             'roles' => 'nullable|array',
         ]);
 
+        $profile = $this->employees->getProfile((int) $request->employee_id);
+        if (! $profile) {
+            return back()->withInput()->with('error', 'Karyawan tidak ditemukan di HRD.');
+        }
+
+        $email = $profile['email'] ?: $request->email_manual;
+        if (! $email) {
+            return back()->withInput()->with('error', 'Karyawan tidak memiliki email di HRD. Isi email manual.');
+        }
+
+        if (User::where('email', $email)->exists()) {
+            return back()->withInput()->with('error', 'Email "'.$email.'" sudah terdaftar.');
+        }
+
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
+            'employee_id' => (int) $request->employee_id,
+            'nik' => $profile['employee_number'] ?? null,
+            'name' => $profile['name'] ?? '-',
+            'email' => $email,
             'password' => Hash::make($request->password),
         ]);
 
@@ -93,15 +114,31 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'employee_id' => ['required', 'integer', 'min:1', Rule::unique('users', 'employee_id')->ignore($user->id)],
+            'email_manual' => 'nullable|email|max:255',
             'password' => 'nullable|string|min:8',
             'roles' => 'nullable|array',
         ]);
 
+        $profile = $this->employees->getProfile((int) $request->employee_id);
+        if (! $profile) {
+            return back()->withInput()->with('error', 'Karyawan tidak ditemukan di HRD.');
+        }
+
+        $email = $profile['email'] ?: $request->email_manual;
+        if (! $email) {
+            return back()->withInput()->with('error', 'Karyawan tidak memiliki email di HRD. Isi email manual.');
+        }
+
+        if (User::where('email', $email)->where('id', '!=', $user->id)->exists()) {
+            return back()->withInput()->with('error', 'Email "'.$email.'" sudah terdaftar di user lain.');
+        }
+
         $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
+            'employee_id' => (int) $request->employee_id,
+            'nik' => $profile['employee_number'] ?? null,
+            'name' => $profile['name'] ?? '-',
+            'email' => $email,
         ]);
 
         if ($request->filled('password')) {
