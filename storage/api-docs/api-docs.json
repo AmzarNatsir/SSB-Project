@@ -12,6 +12,116 @@
         }
     ],
     "paths": {
+        "/projects": {
+            "get": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "List Project (uid, project_name, project_code)",
+                "description": "Mengembalikan daftar project dalam bentuk ringkas: hanya uid, project_name, dan project_code. **Hanya menampilkan project dengan project_status = COMPLETED**. Mendukung pencarian via parameter `q` (mencari di project_name / project_code / project_number) dan paginasi via `per_page` (default 25, max 100).",
+                "operationId": "a0755734d2ccb8c2b2dcea2dc4bca2bc",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Kata kunci pencarian (project_name / project_code / project_number).",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Jumlah item per halaman (1-100, default 25).",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Daftar project (paginated)"
+                    },
+                    "401": {
+                        "description": "Unauthenticated — token tidak dikirim / tidak valid / expired. Login dulu via POST /api/login lalu klik tombol Authorize di atas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/projects/{uid}": {
+            "get": {
+                "tags": [
+                    "Project"
+                ],
+                "summary": "Detail Project (seluruh data)",
+                "description": "Mengembalikan seluruh data project beserta relasi utama (kategori, subkategori, PIC, equipment rental rate, surveys, latest budget/quotation/negotiation, contracts aktif, unit requests, replacements, returns, transfers). **Hanya project dengan project_status = COMPLETED yang dapat diakses.**",
+                "operationId": "f0a4613199d1461efd55c8852717f052",
+                "parameters": [
+                    {
+                        "name": "uid",
+                        "in": "path",
+                        "description": "UID (UUID) Project",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detail project"
+                    },
+                    "404": {
+                        "description": "Project tidak ditemukan"
+                    },
+                    "401": {
+                        "description": "Unauthenticated — token tidak dikirim / tidak valid / expired. Login dulu via POST /api/login lalu klik tombol Authorize di atas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/unit-replacements": {
             "get": {
                 "tags": [
@@ -568,6 +678,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Project",
+            "description": "Project"
+        },
         {
             "name": "Unit Replacement",
             "description": "Unit Replacement"

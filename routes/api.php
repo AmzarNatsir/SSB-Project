@@ -24,6 +24,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::patch('/unit-requests/items/{id}/ready', [ApiUnitRequestController::class, 'updateItemReady'])
         ->where('id', '[0-9]+');
 
+    // === Projects ===
+    Route::get('/projects', [\App\Http\Controllers\Api\ApiProjectController::class, 'index']);
+    Route::get('/projects/{uid}', [\App\Http\Controllers\Api\ApiProjectController::class, 'show'])
+        ->where('uid', '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}');
+
     // === Unit Replacements (PTU) ===
     Route::get('/unit-replacements', [\App\Http\Controllers\Api\ApiUnitReplacementController::class, 'index']);
     Route::get('/unit-replacements/{uid}', [\App\Http\Controllers\Api\ApiUnitReplacementController::class, 'show'])
