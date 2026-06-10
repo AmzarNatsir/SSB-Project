@@ -72,7 +72,6 @@ class UserController extends Controller
         $request->validate([
             'employee_id' => 'required|integer|min:1|unique:users,employee_id',
             'email_manual' => 'nullable|email|max:255',
-            'password' => 'required|string|min:8',
             'roles' => 'nullable|array',
         ]);
 
@@ -90,12 +89,18 @@ class UserController extends Controller
             return back()->withInput()->with('error', 'Email "'.$email.'" sudah terdaftar.');
         }
 
+        $nik = $profile['employee_number'] ?? null;
+        if ($nik && User::where('nik', $nik)->exists()) {
+            return back()->withInput()->with('error', 'Karyawan dengan NIK "'.$nik.'" sudah terdaftar.');
+        }
+
         $user = User::create([
             'employee_id' => (int) $request->employee_id,
-            'nik' => $profile['employee_number'] ?? null,
+            'nik' => $nik,
             'name' => $profile['name'] ?? '-',
             'email' => $email,
-            'password' => Hash::make($request->password),
+            // Password random karena login menggunakan SSO
+            'password' => Hash::make(\Illuminate\Support\Str::random(32)),
         ]);
 
         if ($request->has('roles')) {
@@ -116,7 +121,6 @@ class UserController extends Controller
         $request->validate([
             'employee_id' => ['required', 'integer', 'min:1', Rule::unique('users', 'employee_id')->ignore($user->id)],
             'email_manual' => 'nullable|email|max:255',
-            'password' => 'nullable|string|min:8',
             'roles' => 'nullable|array',
         ]);
 
@@ -134,16 +138,17 @@ class UserController extends Controller
             return back()->withInput()->with('error', 'Email "'.$email.'" sudah terdaftar di user lain.');
         }
 
+        $nik = $profile['employee_number'] ?? null;
+        if ($nik && User::where('nik', $nik)->where('id', '!=', $user->id)->exists()) {
+            return back()->withInput()->with('error', 'Karyawan dengan NIK "'.$nik.'" sudah terdaftar di user lain.');
+        }
+
         $user->update([
             'employee_id' => (int) $request->employee_id,
-            'nik' => $profile['employee_number'] ?? null,
+            'nik' => $nik,
             'name' => $profile['name'] ?? '-',
             'email' => $email,
         ]);
-
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
-        }
 
         $user->syncRoles($request->roles ?? []);
 

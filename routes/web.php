@@ -1,18 +1,24 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectCategoryController;
 use App\Http\Controllers\ProjectSubCategoryController;
 use App\Http\Controllers\ScoringController;
+use App\Http\Controllers\SsoController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/login', [AuthController::class, 'index'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+// === SSO Routes — Login via Identity Provider (HRD / ssb-project) ===
+// /login         → redirect langsung ke IdP (tidak ada form login lokal)
+// /auth/ssb/callback → IdP redirect kembali ke sini setelah user login
+// /logout        → Single Logout: hapus session lokal + revoke token IdP
+Route::get('/login',               [SsoController::class, 'showLoginForm'])->name('login');
+Route::get('/auth/ssb/redirect',   [SsoController::class, 'redirect'])->name('sso.redirect');
+Route::get('/auth/ssb/callback',   [SsoController::class, 'callback'])->name('sso.callback');
+Route::post('/logout',             [SsoController::class, 'logout'])->name('logout');
+Route::get('/logout',              [SsoController::class, 'logout'])->name('logout.get');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/index', function () {

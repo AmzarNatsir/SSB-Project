@@ -48,4 +48,12 @@ return [
         'timeout' => env('EMPLOYEE_API_TIMEOUT', 20),       // seconds
     ],
 
+    // SSO Identity Provider (HRD / ssb-project via Laravel Passport)
+    'ssb-idp' => [
+        'client_id'     => env('SSB_CLIENT_ID'),
+        'client_secret' => env('SSB_CLIENT_SECRET'),
+        'redirect'      => env('SSB_REDIRECT_URI'),
+        'base_url'      => env('SSB_BASE_URL'),
+    ],
+
 ];

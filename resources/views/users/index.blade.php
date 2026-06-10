@@ -39,6 +39,7 @@
                             <thead class="thead-light">
                                 <tr>
                                     <th style="width: 50px;">No</th>
+                                    <th>NIK</th>
                                     <th>Name</th>
                                     <th>Email</th>
                                     <th>Roles</th>
@@ -93,10 +94,6 @@
                             <small class="text-danger">Karyawan ini tidak memiliki email di HRD, isi manual.</small>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Password <span class="text-danger">*</span></label>
-                            <input type="password" name="password" class="form-control" placeholder="Min 8 karakter" required>
-                        </div>
                         <div class="mb-3">
                             <label class="form-label">Assign Roles</label>
                             <select name="roles[]" class="form-control select2-roles" multiple data-placeholder="Choose Roles">
@@ -153,10 +150,6 @@
                             <small class="text-danger">Karyawan ini tidak memiliki email di HRD, isi manual.</small>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Password <small class="text-muted">(Kosongkan untuk tidak ganti)</small></label>
-                            <input type="password" name="password" class="form-control" placeholder="Password baru">
-                        </div>
                         <div class="mb-3">
                             <label class="form-label">Assign Roles</label>
                             <select name="roles[]" id="edit_roles" class="form-control select2-roles" multiple data-placeholder="Choose Roles">
@@ -320,6 +313,7 @@
                 ajax: "{{ route('manage-users.index') }}",
                 columns: [
                     {data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false},
+                    {data: 'nik', name: 'nik', defaultContent: '-'},
                     {data: 'name', name: 'name'},
                     {data: 'email', name: 'email'},
                     {data: 'roles', name: 'roles', orderable: false},
