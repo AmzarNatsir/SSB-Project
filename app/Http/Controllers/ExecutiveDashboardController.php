@@ -155,8 +155,8 @@ class ExecutiveDashboardController extends Controller
             ->whereIn('i.status', ['APPROVED', 'PAID'])
             ->whereBetween('i.invoice_date', [$dateFrom, $dateTo])
             ->when($projectId, fn($q) => $q->where('i.project_id', $projectId))
-            ->selectRaw('i.id, DATEDIFF(MAX(COALESCE(rs.payment_date, NOW())), i.invoice_date) AS days_to_pay')
-            ->groupBy('i.id');
+            ->selectRaw('i.id, i.invoice_date, DATEDIFF(MAX(COALESCE(rs.payment_date, NOW())), i.invoice_date) AS days_to_pay')
+            ->groupBy('i.id', 'i.invoice_date');
 
         $dsoQuery = DB::query()
             ->fromSub($dsoSubquery, 'dso_calc')
