@@ -53,16 +53,21 @@
                 <li class="menu-title"><span>Main Menu</span></li>
                 <li>
                     <ul>
+                        @if (Auth::user()->can('view_executive_dashboard'))
                         <li class="submenu">
                             <a href="javascript:void(0);"
                                 class="{{ Request::is('index', '/', 'leads-dashboard', 'project-dashboard', 'executive-dashboard') ? 'active subdrop' : '' }}">
                                 <i class="ti ti-dashboard"></i><span>Dashboard</span><span class="menu-arrow"></span>
                             </a>
                             <ul>
+                                @can('view_executive_dashboard')
                                 <li><a href="{{route('executive-dashboard')}}"
                                         class="{{ Request::is('executive-dashboard') ? 'active' : '' }}"><i class="ti ti-chart-bar me-2 text-primary"></i>Executive Dashboard</a></li>
+                                @endcan
                             </ul>
                         </li>
+                        @endif
+                        @can('manage_project_categories')
                         <li class="menu-title"><span>Project Settings</span></li>
                         <li class="submenu">
                             <a href="javascript:void(0);" class="{{ Request::is('common') ? 'subdrop active' : '' }}"><i
@@ -77,6 +82,8 @@
                                         Category</a></li>
                             </ul>
                         </li>
+                        @endcan
+                        @can('manage_settings')
                         <li class="submenu">
                             <a href="javascript:void(0);"
                                 class="{{ Request::is('reference') ? 'subdrop active' : '' }}"><i
@@ -101,83 +108,139 @@
                                 </li>
                             </ul>
                         </li>
+                        @endcan
                     </ul>
                 </li>
+                @if(Auth::user()->can('view_projects') || Auth::user()->can('view_surveys') || Auth::user()->can('view_budgets') || Auth::user()->can('view_quotations') || Auth::user()->can('view_agreements') || Auth::user()->can('view_contracts') || Auth::user()->can('view_negotiations') || Auth::user()->can('view_unit_requests') || Auth::user()->can('view_unit_replacements') || Auth::user()->can('view_unit_returns') || Auth::user()->can('view_unit_transfers'))
                 <li class="menu-title"><span>PROJECT</span></li>
                 <li>
                     <ul>
+                        @can('view_projects')
                         <li class="{{ Request::is('projects') ? 'active' : '' }}"><a href="{{url('projects')}}"><i
                                     class="ti ti-atom-2"></i><span>Projects</span></a></li>
+                        @endcan
+                        @can('view_surveys')
                         <li class="{{ Request::is('project-survey*') ? 'active' : '' }}"><a
                                 href="{{url('project-survey')}}"><i class="ti ti-clipboard-check"></i><span>Project
                                     Survey</span></a></li>
+                        @endcan
+                        @can('view_budgets')
                         <li class="{{ Request::is('budgets*') ? 'active' : '' }}"><a href="{{url('budgets')}}"><i
                                     class="ti ti-wallet"></i><span>Project Budgets</span></a></li>
+                        @endcan
+                        @can('view_quotations')
                         <li class="{{ Request::is('quotations*') ? 'active' : '' }}"><a href="{{url('quotations')}}"><i
                                     class="ti ti-file-dollar"></i><span>Project Quotations/Penawaran</span></a></li>
+                        @endcan
+                        @can('view_agreements')
+                        <li class="{{ Request::is('agreements*') ? 'active' : '' }}"><a href="{{url('agreements')}}"><i
+                                    class="ti ti-file"></i><span>Project Agreements</span></a></li>
+                        @endcan
+                        @can('view_contracts')
+                        <li class="{{ Request::is('contracts*') ? 'active' : '' }}"><a href="{{url('contracts')}}"><i
+                                    class="ti ti-file"></i><span>Project Contracts</span></a></li>
+                        @endcan
+                        @can('view_negotiations')
                         <li class="{{ Request::is('negotiations*') ? 'active' : '' }}"><a
                                 href="{{url('negotiations')}}"><i class="ti ti-scale"></i><span>Price
                                     Negotiation</span></a></li>
+                        @endcan
+                        @can('view_contracts')
                         <li class="{{ Request::is('final-contracts*') ? 'active' : '' }}"><a
                                 href="{{url('final-contracts')}}"><i class="ti ti-file"></i><span>Final
                                     Contract</span></a></li>
+                        @endcan
+                        @can('view_unit_requests')
                         <li class="{{ Request::is('unit-requests*') ? 'active' : '' }}"><a
                                 href="{{ route('unit-requests.index') }}"><i class="ti ti-car"></i><span>Unit
                                     Request</span></a></li>
+                        @endcan
+                        @can('view_unit_replacements')
                         <li class="{{ Request::is('unit-replacements*') ? 'active' : '' }}"><a
                                 href="{{ route('unit-replacements.index') }}"><i class="ti ti-replace"></i><span>Unit
                                     Replacement (PTU)</span></a></li>
+                        @endcan
+                        @can('view_unit_returns')
                         <li class="{{ Request::is('unit-returns*') ? 'active' : '' }}"><a
                                 href="{{ route('unit-returns.index') }}"><i class="ti ti-arrow-back"></i><span>Unit
                                     Return (PPU)</span></a></li>
+                        @endcan
+                        @can('view_unit_transfers')
                         <li class="{{ Request::is('unit-transfers*') ? 'active' : '' }}"><a href="{{ route('unit-transfers.index') }}"><i
                                     class="ti ti-car"></i><span>Unit Transfer</span></a></li>
+                        @endcan
                     </ul>
                 </li>
+                @endif
+                @if(Auth::user()->can('view_workforce_formations') || Auth::user()->can('view_unit_formations') || Auth::user()->can('view_timesheets') || Auth::user()->can('view_work_realizations') || Auth::user()->can('view_invoices') || Auth::user()->can('view_receivables') || Auth::user()->can('view_receivable_settlements'))
                 <li class="menu-title"><span>IMPLEMENTATION</span></li>
                 <li>
                     <ul>
+                        @can('view_workforce_formations')
                         <li class="{{ Request::is('workforce-formations*') ? 'active' : '' }}"><a
                                 href="{{ route('workforce-formations.index') }}"><i
                                     class="ti ti-users"></i><span>SK Penugasan Tim</span></a></li>
+                        @endcan
+                        @can('view_unit_formations')
                         <li class="{{ Request::is('unit-formations*') ? 'active' : '' }}"><a
                                 href="{{ route('unit-formations.index') }}"><i
                                     class="ti ti-truck"></i><span>SK Penetapan Unit</span></a></li>
+                        @endcan
+                        @can('view_timesheets')
                         <li class="{{ Request::is('timesheets*') ? 'active' : '' }}"><a
                                 href="{{ route('timesheets.index') }}"><i
                                     class="ti ti-calendar"></i><span>Timesheet Journal</span></a></li>
+                        @endcan
                         {{-- <li class="{{ Request::is('spare-part-usages*') ? 'active' : '' }}"><a
                                 href="{{ route('spare-part-usages.index') }}"><i
                                     class="ti ti-tool"></i><span>Spare Part Usage</span></a></li> --}}
+                        @can('view_work_realizations')
                         <li class="{{ Request::is('work-realizations*') ? 'active' : '' }}"><a
                                 href="{{ route('work-realizations.index') }}"><i
                                     class="ti ti-list"></i><span>Work Realization</span></a></li>
+                        @endcan
+                        @can('view_invoices')
                         <li class="{{ Request::is('invoices*') ? 'active' : '' }}"><a
                                 href="{{ route('invoices.index') }}"><i
                                     class="ti ti-invoice"></i><span>Invoice</span></a></li>
+                        @endcan
+                        @can('view_receivables')
                         <li class="{{ Request::is('receivables') || Request::is('receivables/*') ? 'active' : '' }}"><a
                                 href="{{ route('receivables.index') }}"><i
                                     class="ti ti-cash"></i><span>Penerimaan Dana</span></a></li>
+                        @endcan
+                        @can('view_receivable_settlements')
                         <li class="{{ Request::is('receivable-settlements*') ? 'active' : '' }}"><a
                                 href="{{ route('receivable-settlements.index') }}"><i
                                     class="ti ti-arrows-exchange"></i><span>Pelunasan Piutang</span></a></li>
-                        <li class="{{ Request::is('project-adjustment') ? 'active' : '' }}"><a href="#"><i
-                                    class="ti ti-invoice"></i><span>Project Adjustment</span></a></li>
+                        @endcan
                     </ul>
                 </li>
+                @endif
+                @if(Auth::user()->can('view_petty_cash_categories') || Auth::user()->can('view_petty_cash_requests') || Auth::user()->can('view_petty_cash_payments') || Auth::user()->can('view_petty_cash_purchases'))
                 <li class="menu-title"><span>PENGELOLAAN KAS KECIL</span></li>
                 <li>
                     <ul>
+                        @can('view_petty_cash_categories')
                         <li class="{{ Request::is('petty-cash-categories*') ? 'active' : '' }}"><a href="{{ route('petty-cash-categories.index') }}"><i
                                     class="ti ti-tag"></i><span>Jenis Biaya (Master)</span></a></li>
+                        @endcan
+                        @can('view_petty_cash_requests')
                         <li class="{{ Request::is('petty-cash-requests*') ? 'active' : '' }}"><a href="{{ route('petty-cash-requests.index') }}"><i
                                     class="ti ti-cash"></i><span>Permintaan Kas Kecil</span></a></li>
+                        @endcan
+                        @can('view_petty_cash_payments')
                         <li class="{{ Request::is('petty-cash-payments*') ? 'active' : '' }}"><a href="{{ route('petty-cash-payments.index') }}"><i
                                     class="ti ti-receipt"></i><span>Pembayaran Biaya</span></a></li>
+                        @endcan
+                        @can('view_petty_cash_purchases')
                         <li class="{{ Request::is('petty-cash-purchases*') ? 'active' : '' }}"><a href="{{ route('petty-cash-purchases.index') }}"><i
                                     class="ti ti-shopping-cart"></i><span>Pembelian Tunai</span></a></li>
+                        @endcan
                     </ul>
                 </li>
+                @endif
+                @if(Auth::user()->can('view_fuel_usage_report') || Auth::user()->can('view_project_survey_report') || Auth::user()->can('view_project_budget_report') || Auth::user()->can('view_project_realization_report') || Auth::user()->can('view_ar_aging_report') || Auth::user()->can('view_collection_performance_report') || Auth::user()->can('view_bad_debt_analysis_report') || Auth::user()->can('view_petty_cash_transaction_report'))
                 <li class="menu-title"><span>REPORTS</span></li>
                 <li>
                     <ul>
@@ -188,41 +251,64 @@
                                     class="menu-arrow"></span>
                             </a>
                             <ul>
+                                @can('view_fuel_usage_report')
                                 <li><a class="{{ Request::is('lead-reports*') ? 'active' : '' }}"
                                         href="{{ route('lead-reports') }}"><i class="ti ti-droplet me-1 text-info"></i>Fuel Usage</a></li>
-                                {{-- <li><a class="{{ Request::is('deal-reports*') ? 'active' : '' }}"
-                                        href="{{ route('deal-reports') }}"><i class="ti ti-tool me-1 text-warning"></i>Spare Part Usage</a></li> --}}
+                                @endcan
+                                @can('view_project_survey_report')
                                 <li><a class="{{ Request::is('survey-reports*') ? 'active' : '' }}"
                                         href="{{ route('survey-reports') }}"><i class="ti ti-check me-1 text-success"></i>Project Survey Results</a></li>
+                                @endcan
+                                @can('view_project_budget_report')
                                 <li><a class="{{ Request::is('company-reports*') ? 'active' : '' }}"
                                         href="{{ route('company-reports') }}"><i class="ti ti-wallet me-1 text-success"></i>Project Budget Realization</a></li>
+                                @endcan
+                                @can('view_project_realization_report')
                                 <li><a class="{{ Request::is('project-realization-reports*') ? 'active' : '' }}"
                                         href="{{ route('project-realization-reports') }}"><i class="ti ti-chart-area me-1 text-danger"></i>Project Realization</a></li>
+                                @endcan
+                                @can('view_ar_aging_report')
                                 <li><a class="{{ Request::is('accounts-receivable-aging*') ? 'active' : '' }}"
                                         href="{{ route('accounts-receivable-aging') }}"><i class="ti ti-calendar-time me-1 text-warning"></i>Accounts Receivable Aging</a></li>
+                                @endcan
+                                @can('view_collection_performance_report')
                                 <li><a class="{{ Request::is('collection-performance*') ? 'active' : '' }}"
                                         href="{{ route('collection-performance') }}"><i class="ti ti-users-group me-1 text-success"></i>Collection Performance</a></li>
+                                @endcan
+                                @can('view_bad_debt_analysis_report')
                                 <li><a class="{{ Request::is('bad-debt-analysis*') ? 'active' : '' }}"
                                         href="{{ route('bad-debt-analysis') }}"><i class="ti ti-alert-circle me-1 text-danger"></i>Bad Debt Analysis</a></li>
+                                @endcan
+                                @can('view_petty_cash_transaction_report')
                                 <li><a class="{{ Request::is('petty-cash-transaction*') ? 'active' : '' }}"
                                         href="{{ route('petty-cash-transaction.index') }}"><i class="ti ti-cash-banknote me-1 text-info"></i>Project Petty Cash Transaction</a></li>
+                                @endcan
                             </ul>
                         </li>
                     </ul>
                 </li>
+                @endif
+                @if(Auth::user()->can('manage_users') || Auth::user()->can('manage_roles') || Auth::user()->can('manage_permissions'))
                 <li class="menu-title"><span>User Management</span></li>
                 <li>
                     <ul>
+                        @can("manage_users")
                         <li class="{{ Request::is('manage-users') ? 'active' : '' }}"><a
                                 href="{{url('manage-users')}}"><i class="ti ti-users"></i><span>Manage Users</span></a>
                         </li>
+                        @endcan
+                        @can("manage_roles")
                         <li class="{{ Request::is('roles-permissions', 'permission') ? 'active' : '' }}"><a
                                 href="{{url('roles-permissions')}}"><i class="ti ti-user-shield"></i><span>Roles &
                                     Permissions</span></a></li>
+                        @endcan
+                        @can("manage_permissions")
                         <li class="{{ Request::is('permissions') ? 'active' : '' }}"><a href="{{url('permissions')}}"><i
                                     class="ti ti-flag-question"></i><span>Permissions</span></a></li>
+                        @endcan
                     </ul>
                 </li>
+                @endif
                 <li class="menu-title"><span>Help</span></li>
             </ul>
         </div>
