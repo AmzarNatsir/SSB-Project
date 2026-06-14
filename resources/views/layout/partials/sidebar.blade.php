@@ -255,11 +255,11 @@
                                 <li><a class="{{ Request::is('lead-reports*') ? 'active' : '' }}"
                                         href="{{ route('lead-reports') }}"><i class="ti ti-droplet me-1 text-info"></i>Fuel Usage</a></li>
                                 @endcan
-                                @can('view_project_survey_report')
+                                @can('view_survey_results_report')
                                 <li><a class="{{ Request::is('survey-reports*') ? 'active' : '' }}"
                                         href="{{ route('survey-reports') }}"><i class="ti ti-check me-1 text-success"></i>Project Survey Results</a></li>
                                 @endcan
-                                @can('view_project_budget_report')
+                                @can('view_budget_realization_report')
                                 <li><a class="{{ Request::is('company-reports*') ? 'active' : '' }}"
                                         href="{{ route('company-reports') }}"><i class="ti ti-wallet me-1 text-success"></i>Project Budget Realization</a></li>
                                 @endcan
