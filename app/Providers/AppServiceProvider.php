@@ -10,6 +10,7 @@ use App\Socialite\SsbIdpProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
+use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +46,9 @@ class AppServiceProvider extends ServiceProvider
             return $this->app->make(SocialiteFactory::class)
                 ->buildProvider(SsbIdpProvider::class, $config);
         });
+
+        // Set Bootstrap 5 as the default pagination layout globally
+        Paginator::useBootstrapFive();
     }
 }
 

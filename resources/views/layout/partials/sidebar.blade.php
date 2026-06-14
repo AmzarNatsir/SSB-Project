@@ -61,9 +61,9 @@
                             <ul>
                                 <li><a href="{{url('index')}}"
                                         class="{{ Request::is('index', '/') ? 'active' : '' }}">Fuel Usage</a></li>
-                                <li><a href="{{url('leads-dashboard')}}"
+                                {{-- <li><a href="{{url('leads-dashboard')}}"
                                         class="{{ Request::is('leads-dashboard') ? 'active' : '' }}">Spare Part
-                                        Usage</a></li>
+                                        Usage</a></li> --}}
                                 <li><a href="{{url('project-dashboard')}}"
                                         class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Survey
                                         Results</a></li>
@@ -170,6 +170,9 @@
                         <li class="{{ Request::is('timesheets*') ? 'active' : '' }}"><a
                                 href="{{ route('timesheets.index') }}"><i
                                     class="ti ti-calendar"></i><span>Timesheet Journal</span></a></li>
+                        {{-- <li class="{{ Request::is('spare-part-usages*') ? 'active' : '' }}"><a
+                                href="{{ route('spare-part-usages.index') }}"><i
+                                    class="ti ti-tool"></i><span>Spare Part Usage</span></a></li> --}}
                         <li class="{{ Request::is('work-realizations*') ? 'active' : '' }}"><a
                                 href="{{ route('work-realizations.index') }}"><i
                                     class="ti ti-list"></i><span>Work Realization</span></a></li>
@@ -204,19 +207,19 @@
                     <ul>
                         <li class="submenu">
                             <a href="javascript:void(0);"
-                                class="{{ Request::is('lead-reports', 'deal-reports', 'contact-reports', 'company-reports', 'project-reports', 'task-reports') ? 'subdrop active' : '' }}">
+                                class="{{ Request::is('lead-reports*', 'deal-reports*', 'survey-reports*', 'contact-reports', 'company-reports*', 'project-reports', 'task-reports') ? 'subdrop active' : '' }}">
                                 <i class="ti ti-report-analytics"></i><span>Reports</span><span
                                     class="menu-arrow"></span>
                             </a>
                             <ul>
-                                <li><a class="{{ Request::is('lead-reports') ? 'active' : '' }}"
-                                        href="{{ url('lead-reports') }}">Fuel Usage</a></li>
-                                <li><a class="{{ Request::is('deal-reports') ? 'active' : '' }}"
-                                        href="{{ url('deal-reports') }}">Spare Part Usage</a></li>
-                                <li><a class="{{ Request::is('contact-reports') ? 'active' : '' }}"
-                                        href="{{ url('contact-reports') }}">Project Survey Results</a></li>
-                                <li><a class="{{ Request::is('company-reports') ? 'active' : '' }}"
-                                        href="{{ url('company-reports') }}">Project Budget Realization</a></li>
+                                <li><a class="{{ Request::is('lead-reports*') ? 'active' : '' }}"
+                                        href="{{ route('lead-reports') }}"><i class="ti ti-droplet me-1 text-info"></i>Fuel Usage</a></li>
+                                {{-- <li><a class="{{ Request::is('deal-reports*') ? 'active' : '' }}"
+                                        href="{{ route('deal-reports') }}"><i class="ti ti-tool me-1 text-warning"></i>Spare Part Usage</a></li> --}}
+                                <li><a class="{{ Request::is('survey-reports*') ? 'active' : '' }}"
+                                        href="{{ route('survey-reports') }}">Project Survey Results</a></li>
+                                <li><a class="{{ Request::is('company-reports*') ? 'active' : '' }}"
+                                        href="{{ route('company-reports') }}"><i class="ti ti-wallet me-1 text-success"></i>Project Budget Realization</a></li>
                                 <li><a class="{{ Request::is('project-reports') ? 'active' : '' }}"
                                         href="{{ url('project-reports') }}">Project Realization</a></li>
                                 <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"

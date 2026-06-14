@@ -204,6 +204,24 @@ Route::middleware(['auth'])->group(function () {
     Route::post('timesheets/{timesheet}/approve', [\App\Http\Controllers\TimesheetController::class, 'approve'])->name('timesheets.approve');
     Route::get('api/timesheets/available-units',  [\App\Http\Controllers\TimesheetController::class, 'availableUnits'])->name('timesheets.available-units');
 
+    // Fuel Usage Report
+    Route::get('lead-reports', [\App\Http\Controllers\FuelUsageReportController::class, 'index'])->name('lead-reports');
+    Route::get('lead-reports/export', [\App\Http\Controllers\FuelUsageReportController::class, 'export'])->name('lead-reports.export');
+
+    // Spare Part Usage — Report & CRUD
+    Route::get('deal-reports', [\App\Http\Controllers\SparePartUsageController::class, 'report'])->name('deal-reports');
+    Route::get('deal-reports/export', [\App\Http\Controllers\SparePartUsageController::class, 'export'])->name('deal-reports.export');
+    Route::resource('spare-part-usages', \App\Http\Controllers\SparePartUsageController::class)
+        ->parameters(['spare-part-usages' => 'sparePartUsage']);
+
+    // Project Survey Report
+    Route::get('survey-reports', [\App\Http\Controllers\ProjectSurveyReportController::class, 'index'])->name('survey-reports');
+    Route::get('survey-reports/export', [\App\Http\Controllers\ProjectSurveyReportController::class, 'export'])->name('survey-reports.export');
+
+    // Project Budget Realization Report
+    Route::get('company-reports', [\App\Http\Controllers\ProjectBudgetRealizationReportController::class, 'index'])->name('company-reports');
+    Route::get('company-reports/export', [\App\Http\Controllers\ProjectBudgetRealizationReportController::class, 'export'])->name('company-reports.export');
+
     // Unit Formation (SK Penetapan Unit & Operator)
     Route::resource('unit-formations', \App\Http\Controllers\UnitFormationController::class)
         ->parameters(['unit-formations' => 'unitFormation']);
