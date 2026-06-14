@@ -55,36 +55,12 @@
                     <ul>
                         <li class="submenu">
                             <a href="javascript:void(0);"
-                                class="{{ Request::is('index', '/', 'leads-dashboard', 'project-dashboard') ? 'active subdrop' : '' }}">
+                                class="{{ Request::is('index', '/', 'leads-dashboard', 'project-dashboard', 'executive-dashboard') ? 'active subdrop' : '' }}">
                                 <i class="ti ti-dashboard"></i><span>Dashboard</span><span class="menu-arrow"></span>
                             </a>
                             <ul>
-                                <li><a href="{{url('index')}}"
-                                        class="{{ Request::is('index', '/') ? 'active' : '' }}">Fuel Usage</a></li>
-                                {{-- <li><a href="{{url('leads-dashboard')}}"
-                                        class="{{ Request::is('leads-dashboard') ? 'active' : '' }}">Spare Part
-                                        Usage</a></li> --}}
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Survey
-                                        Results</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Budget
-                                        Realization</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project
-                                        Realization</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Accounts
-                                        Receivable Aging</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Collection
-                                        Performance</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Bad Debt
-                                        Analysis</a></li>
-                                <li><a href="{{url('project-dashboard')}}"
-                                        class="{{ Request::is('project-dashboard') ? 'active' : '' }}">Project Petty
-                                        Cash Transaction</a></li>
+                                <li><a href="{{route('executive-dashboard')}}"
+                                        class="{{ Request::is('executive-dashboard') ? 'active' : '' }}"><i class="ti ti-chart-bar me-2 text-primary"></i>Executive Dashboard</a></li>
                             </ul>
                         </li>
                         <li class="menu-title"><span>Project Settings</span></li>
@@ -207,7 +183,7 @@
                     <ul>
                         <li class="submenu">
                             <a href="javascript:void(0);"
-                                class="{{ Request::is('lead-reports*', 'deal-reports*', 'survey-reports*', 'contact-reports', 'company-reports*', 'project-reports', 'task-reports') ? 'subdrop active' : '' }}">
+                                class="{{ Request::is('lead-reports*', 'deal-reports*', 'survey-reports*', 'contact-reports', 'company-reports*', 'project-realization-reports*', 'accounts-receivable-aging*', 'collection-performance*', 'bad-debt-analysis*', 'petty-cash-transaction*', 'task-reports') ? 'subdrop active' : '' }}">
                                 <i class="ti ti-report-analytics"></i><span>Reports</span><span
                                     class="menu-arrow"></span>
                             </a>
@@ -217,19 +193,19 @@
                                 {{-- <li><a class="{{ Request::is('deal-reports*') ? 'active' : '' }}"
                                         href="{{ route('deal-reports') }}"><i class="ti ti-tool me-1 text-warning"></i>Spare Part Usage</a></li> --}}
                                 <li><a class="{{ Request::is('survey-reports*') ? 'active' : '' }}"
-                                        href="{{ route('survey-reports') }}">Project Survey Results</a></li>
+                                        href="{{ route('survey-reports') }}"><i class="ti ti-check me-1 text-success"></i>Project Survey Results</a></li>
                                 <li><a class="{{ Request::is('company-reports*') ? 'active' : '' }}"
                                         href="{{ route('company-reports') }}"><i class="ti ti-wallet me-1 text-success"></i>Project Budget Realization</a></li>
-                                <li><a class="{{ Request::is('project-reports') ? 'active' : '' }}"
-                                        href="{{ url('project-reports') }}">Project Realization</a></li>
-                                <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
-                                        href="{{ url('task-reports') }}">Accounts Receivable Aging</a></li>
-                                <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
-                                        href="{{ url('task-reports') }}">Collection Performance</a></li>
-                                <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
-                                        href="{{ url('task-reports') }}">Bad Debt Analysis</a></li>
-                                <li><a class="{{ Request::is('task-reports') ? 'active' : '' }}"
-                                        href="{{ url('task-reports') }}">Project Petty Cash Transaction</a></li>
+                                <li><a class="{{ Request::is('project-realization-reports*') ? 'active' : '' }}"
+                                        href="{{ route('project-realization-reports') }}"><i class="ti ti-chart-area me-1 text-danger"></i>Project Realization</a></li>
+                                <li><a class="{{ Request::is('accounts-receivable-aging*') ? 'active' : '' }}"
+                                        href="{{ route('accounts-receivable-aging') }}"><i class="ti ti-calendar-time me-1 text-warning"></i>Accounts Receivable Aging</a></li>
+                                <li><a class="{{ Request::is('collection-performance*') ? 'active' : '' }}"
+                                        href="{{ route('collection-performance') }}"><i class="ti ti-users-group me-1 text-success"></i>Collection Performance</a></li>
+                                <li><a class="{{ Request::is('bad-debt-analysis*') ? 'active' : '' }}"
+                                        href="{{ route('bad-debt-analysis') }}"><i class="ti ti-alert-circle me-1 text-danger"></i>Bad Debt Analysis</a></li>
+                                <li><a class="{{ Request::is('petty-cash-transaction*') ? 'active' : '' }}"
+                                        href="{{ route('petty-cash-transaction.index') }}"><i class="ti ti-cash-banknote me-1 text-info"></i>Project Petty Cash Transaction</a></li>
                             </ul>
                         </li>
                     </ul>

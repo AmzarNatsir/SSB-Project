@@ -25,6 +25,9 @@ Route::middleware(['auth'])->group(function () {
         return view('index');
     })->name('dashboard');
 
+    // Executive Dashboard
+    Route::get('/executive-dashboard', [\App\Http\Controllers\ExecutiveDashboardController::class, 'index'])->name('executive-dashboard');
+
     Route::resource('project-category', ProjectCategoryController::class);
     Route::resource('project-sub-category', ProjectSubCategoryController::class);
     Route::resource('equipment-rental-rates-hm', \App\Http\Controllers\EquipmentRentalRatesHMController::class);
@@ -221,6 +224,26 @@ Route::middleware(['auth'])->group(function () {
     // Project Budget Realization Report
     Route::get('company-reports', [\App\Http\Controllers\ProjectBudgetRealizationReportController::class, 'index'])->name('company-reports');
     Route::get('company-reports/export', [\App\Http\Controllers\ProjectBudgetRealizationReportController::class, 'export'])->name('company-reports.export');
+
+    // Project Realization Report (Budget vs Actual WorkRealization)
+    Route::get('project-realization-reports', [\App\Http\Controllers\ProjectRealizationReportController::class, 'index'])->name('project-realization-reports');
+    Route::get('project-realization-reports/export', [\App\Http\Controllers\ProjectRealizationReportController::class, 'export'])->name('project-realization-reports.export');
+
+    // Accounts Receivable Aging Report
+    Route::get('accounts-receivable-aging', [\App\Http\Controllers\AccountsReceivableAgingReportController::class, 'index'])->name('accounts-receivable-aging');
+    Route::get('accounts-receivable-aging/export', [\App\Http\Controllers\AccountsReceivableAgingReportController::class, 'export'])->name('accounts-receivable-aging.export');
+
+    // Collection Performance Report
+    Route::get('collection-performance', [\App\Http\Controllers\CollectionPerformanceReportController::class, 'index'])->name('collection-performance');
+    Route::get('collection-performance/export', [\App\Http\Controllers\CollectionPerformanceReportController::class, 'export'])->name('collection-performance.export');
+
+    // Bad Debt Analysis Report
+    Route::get('bad-debt-analysis', [\App\Http\Controllers\BadDebtAnalysisReportController::class, 'index'])->name('bad-debt-analysis');
+    Route::get('bad-debt-analysis/export', [\App\Http\Controllers\BadDebtAnalysisReportController::class, 'export'])->name('bad-debt-analysis.export');
+
+    // Project Petty Cash Transaction Report
+    Route::get('petty-cash-transaction', [\App\Http\Controllers\ProjectPettyCashTransactionReportController::class, 'index'])->name('petty-cash-transaction.index');
+    Route::post('petty-cash-transaction/export', [\App\Http\Controllers\ProjectPettyCashTransactionReportController::class, 'export'])->name('petty-cash-transaction.export');
 
     // Unit Formation (SK Penetapan Unit & Operator)
     Route::resource('unit-formations', \App\Http\Controllers\UnitFormationController::class)
