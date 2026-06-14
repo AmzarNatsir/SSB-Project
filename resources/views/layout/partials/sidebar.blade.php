@@ -288,27 +288,27 @@
                     </ul>
                 </li>
                 @endif
-                {{-- @if(Auth::user()->can('manage_users') || Auth::user()->can('manage_roles') || Auth::user()->can('manage_permissions')) --}}
+                @if(Auth::user()->can('manage_users') || Auth::user()->can('manage_roles') || Auth::user()->can('manage_permissions'))
                 <li class="menu-title"><span>User Management</span></li>
                 <li>
                     <ul>
-                        {{-- @can("manage_users") --}}
+                        @can("manage_users")
                         <li class="{{ Request::is('manage-users') ? 'active' : '' }}"><a
                                 href="{{url('manage-users')}}"><i class="ti ti-users"></i><span>Manage Users</span></a>
                         </li>
-                        {{-- @endcan --}}
-                        {{-- @can("manage_roles") --}}
+                        @endcan
+                        @can("manage_roles")
                         <li class="{{ Request::is('roles-permissions', 'permission') ? 'active' : '' }}"><a
                                 href="{{url('roles-permissions')}}"><i class="ti ti-user-shield"></i><span>Roles &
                                     Permissions</span></a></li>
-                        {{-- @endcan --}}
-                        {{-- @can("manage_permissions") --}}
+                        @endcan
+                        @can("manage_permissions")
                         <li class="{{ Request::is('permissions') ? 'active' : '' }}"><a href="{{url('permissions')}}"><i
                                     class="ti ti-flag-question"></i><span>Permissions</span></a></li>
-                        {{-- @endcan --}}
+                        @endcan
                     </ul>
                 </li>
-                {{-- @endif --}}
+                @endif
                 <li class="menu-title"><span>Help</span></li>
             </ul>
         </div>
