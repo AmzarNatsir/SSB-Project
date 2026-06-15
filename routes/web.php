@@ -21,6 +21,11 @@ Route::post('/logout',             [SsoController::class, 'logout'])->name('logo
 Route::get('/logout',              [SsoController::class, 'logout'])->name('logout.get');
 
 Route::middleware(['auth'])->group(function () {
+    // Media routes
+    Route::get('/media/user-photo/{employeeId}', [\App\Http\Controllers\MediaController::class, 'userPhoto'])
+        ->name('media.user-photo')
+        ->where('employeeId', '[0-9]+');
+
     Route::get('/index', function () {
         return view('index');
     })->name('dashboard');
