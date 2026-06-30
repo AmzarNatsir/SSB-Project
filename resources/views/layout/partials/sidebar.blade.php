@@ -136,10 +136,10 @@
                         <li class="{{ Request::is('agreements*') ? 'active' : '' }}"><a href="{{url('agreements')}}"><i
                                     class="ti ti-file"></i><span>Project Agreements</span></a></li>
                         @endcan
-                        @can('view_contracts')
+                        {{-- @can('view_contracts')
                         <li class="{{ Request::is('contracts*') ? 'active' : '' }}"><a href="{{url('contracts')}}"><i
                                     class="ti ti-file"></i><span>Project Contracts</span></a></li>
-                        @endcan
+                        @endcan --}}
                         @can('view_negotiations')
                         <li class="{{ Request::is('negotiations*') ? 'active' : '' }}"><a
                                 href="{{url('negotiations')}}"><i class="ti ti-scale"></i><span>Price
